@@ -210,3 +210,24 @@ Model: `veo-3.1-generate-preview` (standard), 8 s, 720p, `image` = `lastFrame` =
 - **Ocean: refused**, no video. Verbatim: `{"raiMediaFilteredCount": 1, "raiMediaFilteredReasons": ["You cannot generate a response to this prompt due to Google's guardrails related to third-party content."]}`. The video prompt names only Tuesday, so the trigger is the Ariel-lookalike mermaid in the keyframe image. Campfire (Bluey, Frog and Toad) will very likely be refused the same way. Not retried.
 - **Rain: success**, `rain/take_1.mp4` (sha256 `ad2f87ab1174…`): H.264 1280x720, 24 fps, 192 frames, 8.0 s, plus an AAC track (discarded later). Loop seam SSIM (first vs last frame) **0.974**, just over build_loop's 0.97 threshold. SSIM of keyframe vs frame 0 is 0.81 (rescale from 1376x768 plus grain and rain overlay; the joins compare take frames with each other, so this doesn't affect them). Tuesday stays on-model and still. Veo added fern fronds and dripping leaves that slide in at the left and right edges mid-clip, from the prompt's "drips from leaf tips at the edges of frame", and they're gone again by the last frame.
 - OpenRouter has no video-output models (checked `/api/v1/models`: image and audio models only, no Seedance/Seedream), so it isn't a route for MC.
+
+## 2026-09-25 — Stage MC: rain, space, ocean takes
+
+Model: `veo-3.1-generate-preview` (standard), 8 s, 720p, first = last frame, job video prompts unmodified. No refusals in this batch. Loops were built with `build_loop.py` (default `--rotate cw`, not yet confirmed on the panel) into `~/TuesdayDreamMachine-media/content/`.
+
+**Tooling (committed):**
+- `build_loop.py --tail-search N` (default 12). Veo reaches the pinned keyframe about 3–10 frames before the end of the clip and then drifts past it (raw final-frame seam SSIM was 0.95–0.97). The cut is now made at the tail frame that best matches the next take's first frame. Seams went up to 0.985–0.990.
+- `overlay_still.py`: composites a still RGBA cut-out onto a take, aligned per take by an ECC affine fit to frame 0 (Veo stretches 1376x768 to 1280x720, with about a 1.2% vertical squeeze and a 4.8 px shift).
+- `media/COMFYUI_CAMPFIRE.md`: the Wan 2.1 FLF2V workflow for campfire on Peter's RTX 3060 12 GB.
+
+**Rain** (`rain/take_1..3.mp4`): all 3 seams pass at 0.985 (cut at frame 184 each). Loop 23.0 s → `content/master_rain.mp4`, `rain.mp4`, `rain.jpg`. Tuesday stays on-model and still in all takes. take_1 slides large fern fronds with drips in from the left and right edges mid-clip (from the prompt's "drips from leaf tips at the edges of frame"). takes 2 and 3 are clean, with only small drips.
+
+**Space** (`space/take_1..3.mp4`): seams 0.989–0.990. Loop 22.8 s → `content/master_space.mp4` etc. take_1 is clean. take_2: pale wisps drift up beside the moon mid-clip, a little ghost-like. take_3: a glowing halo arc briefly appears around Tuesday's head. Both are candidates for replacement if Peter dislikes them.
+
+**Ocean** (Veo refused the chosen keyframe because of the mermaid, so this uses the still-overlay route): `ocean/keyframe_nomermaid.png` is the chosen keyframe with the mermaid painted out (OpenCV inpaint), and `ocean/mermaid_overlay.png` is the RGBA cut-out. Veo accepted all 3 takes from the plate (`ocean/take_1..3.mp4`). The mermaid was composited back as a still layer (`take_N_comp.mp4`; ECC 0.9987 each), and she sits cleanly on the rock Veo kept. Seams 0.986–0.989. Loop 23.2 s → `content/master_ocean.mp4` etc.
+- **Problem: the lighthouse beam.** The prompt's "beam sweeps… one full sweep" makes Veo render the beam as a flat, hard-edged solid wedge of light across the sky in takes 1 and 2 (take 3's is a softer gradient but still a large hard-edged cone). It clashes with the painterly style. Not acceptable as is. Needs a prompt change (Peter's call), e.g. a stationary soft hazy beam or a gently pulsing lamp.
+- Tuesday's hair blows noticeably in takes 2 and 3 (the prompt asks for a light sway).
+
+**Campfire:** not started on Veo (the same third-party refusal is expected). Waiting on Peter to run the Wan workflow. `campfire/wan_input_832x464.png` is prepared.
+
+Veo spend for this batch: 9 completed 8 s clips (plus the earlier refused ocean request).
