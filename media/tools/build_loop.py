@@ -3,7 +3,9 @@
 
 Each take starts and ends on the same keyframe, so takes can be chained
 end-to-end: drop each take's final frame (it duplicates the next take's first
-frame) and concatenate. The wrap from the last take back to the first lands on
+frame) and concatenate. Veo often reaches the keyframe a few frames early and
+drifts past it, so with --tail-search N the cut point is instead whichever of
+the last N frames best matches the next take's first frame. The wrap from the last take back to the first lands on
 that same keyframe.
 
 Outputs (in --out-dir):
@@ -80,6 +82,8 @@ def main():
                     help="also write <scene>_long.mp4 repeated to about this length")
     ap.add_argument("--seam-threshold", type=float, default=0.97,
                     help="minimum SSIM at every join and at the wrap")
+    ap.add_argument("--tail-search", type=int, default=12,
+                    help="cut each take at the best-matching of its last N frames (1 = always the final frame)")
     ap.add_argument("--force", action="store_true", help="encode even if a seam fails")
     args = ap.parse_args()
 
@@ -94,24 +98,29 @@ def main():
             counts.append(frame_count(dst))
             print(f"take {i}: {take.name}  {counts[-1]} frames")
 
-        # Seam check: the dropped final frame of take i should match the first
-        # frame of the next take (the last take wraps to take 0).
+        # Seam check: the dropped cut frame of take i should match the first
+        # frame of the next take (the last take wraps to take 0). The cut frame
+        # is the best match among the last --tail-search frames.
         failed = False
+        cuts = []
         for i in range(len(norm)):
             j = (i + 1) % len(norm)
-            s = ssim(norm[i], counts[i] - 1, norm[j], 0)
+            tail = range(counts[i] - 1, max(counts[i] - 1 - max(args.tail_search, 1), 0), -1)
+            s, cut = max((ssim(norm[i], f, norm[j], 0), f) for f in tail)
+            cuts.append(cut)
             label = "wrap" if j == 0 else "join"
             ok = s >= args.seam_threshold
             failed |= not ok
-            print(f"{label} take{i} -> take{j}: SSIM {s:.4f} {'ok' if ok else 'FAIL'}")
+            print(f"{label} take{i} -> take{j}: SSIM {s:.4f} at frame {cut}/{counts[i] - 1} "
+                  f"{'ok' if ok else 'FAIL'}")
         if failed and not args.force:
             sys.exit("seam check failed: regenerate the offending take, or pass --force")
 
-        # Chain: drop each take's last frame, concatenate, bake vignette.
+        # Chain: cut each take before its cut frame, concatenate, bake vignette.
         inputs, parts = [], []
-        for i, (path, n) in enumerate(zip(norm, counts)):
+        for i, (path, cut) in enumerate(zip(norm, cuts)):
             inputs += ["-i", str(path)]
-            parts.append(f"[{i}:v]trim=end_frame={n - 1},setpts=PTS-STARTPTS[v{i}]")
+            parts.append(f"[{i}:v]trim=end_frame={cut},setpts=PTS-STARTPTS[v{i}]")
         chain = "".join(f"[v{i}]" for i in range(len(norm)))
         graph = ";".join(parts) + f";{chain}concat=n={len(norm)}:v=1:a=0"
         if args.vignette != "none":
@@ -120,7 +129,7 @@ def main():
         master = args.out_dir / f"master_{args.scene}.mp4"
         run(["ffmpeg", "-hide_banner", "-y", *inputs, "-filter_complex", graph,
              "-map", "[out]", *ENCODE, str(master)])
-        total = sum(counts) - len(counts)
+        total = sum(cuts)
         print(f"master: {master}  {total} frames = {total / FPS:.1f}s")
 
     device = args.out_dir / f"{args.scene}.mp4"
