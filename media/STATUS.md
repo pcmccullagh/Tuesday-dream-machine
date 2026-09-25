@@ -78,3 +78,29 @@ Veo capabilities, from Google's docs (ai.google.dev/gemini-api/docs/video, which
 - **Lite does not have:** reference images (up to 3) or video extension. Standard and Fast have both.
 
 Note: the video docs now suggest **Gemini Omni Flash** as the default video model and Veo 3.1 for last-frame control and scene extension. The key can also see `models/gemini-omni-flash-preview` and `models/gemini-omni-1.1-flash` (their names don't match the veo/image filter, so they aren't in the table above).
+
+
+## 2026-09-25 — Gemini API smoke test
+
+First run of `media/tools/gemini_media.py` against the live API, on the Dell. Spend: one Nano Banana Pro image. No video was generated; all three Veo calls were rejected at request time, before generation started. No keyframes were generated.
+
+**What worked**
+- Both dry runs (image, and video with `--keyframe`) printed well-formed requests.
+- `image media/jobs/00_character_sheet.json -n 1` → `character_sheet/v3/cand_1.jpg` (sha256 `3f68ec627ee6…`) plus sidecar and log entry. Note: **the API returned a JPEG** (1376x768), so the file is `.jpg`, not `.png`, and the script named it correctly. Downstream commands that assume `cand_1.png` need to use `.jpg` or convert first.
+
+**v3 character sheet (`character_sheet/v3/cand_1.jpg`)**
+- Correct layout: exactly three figures (front, three-quarter, profile) on plain cream. No text.
+- Age: reads as roughly 2½–3. Preschooler stance and legs, but a large head and a round, soft face with a stocky torso, so she reads slightly younger than v2 cand_1.
+- Consistency: very good. The bob, fringe, rosy cheeks and pajamas match across all three views. The profile nose is a bit pointier/upturned than the front views, and the nose tip is quite red.
+- Style: pale sweatshirt-style pajamas with a painted green/blue leaf pattern and faint teal glowing specks at the collar and cuffs (the "bioluminescent accents"). Footed socks.
+
+**Video: 3 attempts with `veo-3.1-lite-generate-preview`, 4 s, 720p, `image` = `lastFrame` = v3 cand_1.jpg. All failed with HTTP 400.**
+1. Original script → `` `negativePrompt` isn't supported by this model. Please remove it or refer to the Gemini API documentation for supported usage. ``
+2. Retry 1: switched the frames to the docs' REST shape `{"inlineData": {"mimeType", "data"}}` and `durationSeconds` to a string. Rejected: `` `inlineData` isn't supported by this model. Please remove it or refer to the Gemini API documentation for supported usage. `` The docs' REST example is wrong for this endpoint, so this was reverted.
+3. Retry 2: original `bytesBase64Encoded` frames and int duration, with no `negativePrompt`. Rejected, verbatim: `Your use case is currently not supported.  Please refer to Gemini API documentation for current model offering.`
+
+The last error is a policy/capability refusal, not a field-name error; it passed schema validation. Likely causes, not yet isolated: (a) image-to-video of a person, specifically a child, isn't allowed for this key/region (Veo's `personGeneration` restrictions for image input), or (b) `lastFrame` isn't actually available on Lite for this key. Before any real takes, isolate it: retry once with `--no-last-frame`, and once with a keyframe that has no person in it. **This may block the whole MC plan if Veo won't animate an image containing Tuesday.**
+
+**Script fix committed:** `negativePrompt` is now omitted for Lite models; standard/fast still send it (untested). I added a comment noting that the docs' `inlineData` shape is rejected and `bytesBase64Encoded` is what the API accepts.
+
+**Video checks (ffmpeg):** not run, because no video was produced. No `ocean/take_*.mp4` exists, so there was nothing to rename to `smoketest_take.mp4`.

@@ -129,14 +129,16 @@ def cmd_video(args, job):
     spec = job["video"]
     model = args.model or VIDEO_MODEL
     mime, data = inline_image(args.keyframe)
+    # The docs' REST example uses {"inlineData": ...}, but the API rejects it ("`inlineData` isn't supported").
     frame = {"bytesBase64Encoded": data, "mimeType": mime}
     instance = {"prompt": spec["prompt"], "image": frame}
     if not args.no_last_frame:
         instance["lastFrame"] = frame          # first frame == last frame -> loopable take
     params = {"aspectRatio": spec.get("aspect_ratio", "16:9"),
               "durationSeconds": int(args.duration or spec.get("duration_s", 8)),
-              "resolution": spec.get("resolution", "720p"),
-              "negativePrompt": spec.get("negative_prompt", "")}
+              "resolution": spec.get("resolution", "720p")}
+    if spec.get("negative_prompt") and "lite" not in model:  # Lite rejects negativePrompt (HTTP 400)
+        params["negativePrompt"] = spec["negative_prompt"]
     body = {"instances": [instance], "parameters": params}
     if args.dry_run:
         print(json.dumps(redact(body), indent=2)); return
