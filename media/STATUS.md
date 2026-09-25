@@ -195,3 +195,8 @@ Peter's feedback on round 1: the art style is right. Tuesday's hair is darker no
 - `campfire/keyframe_5`–`8` — Bluey sits show-style (upright, legs out front, paws in lap) and is fully on-model in all four. Frog and Toad wear jackets, shirts and trousers in all four. 5 has Tuesday in a green outfit with auburn hair. 8 has the fire cropped at the bottom edge and is dark. 7 is good (Bluey left, Frog and Toad on a log right). **6 is the pick**: Frog and Toad the most book-like (Toad in a green jacket, Frog in a brown one), clean composition, no spooky glow artifacts.
 - `rain/keyframe_5`–`8` — 5 has auburn hair and a knee crop. 7 is front-facing, cropped at the chest. 8 is good. **6 is the pick**: full figure in the lower third, boots, framed trunks.
 - Round-1 files and the plates are untouched. The plates still show round-1 compositions.
+
+**Ocean retry (Peter's wording, unnamed mermaid):** the Ariel sentence was replaced with Peter's description, "…a very small mermaid rests stomach-down on a rock with her back arched up. She has a green tail, red hair and a purple clam shell bikini top, catching the last light." All 4 rendered with no refusal (`ocean/keyframe_5`–`8`).
+- Every candidate has the mermaid, small and far out in the waves: stomach-down on a rock, back arched, chin on her hands, green tail, red hair, purple shell top. She reads clearly as Ariel.
+- 5, 6, 7: Tuesday is a large over-the-shoulder figure cropped at the waist or hip, not in the lower third. In 7 she wears dark trousers.
+- **8 is the pick:** full-figure Tuesday in the lower right, three-quarter back view with her cheek showing. Lighthouse right with its beam, generous sky, and the clearest mermaid (the shell top is easy to read) on the left in the waves. Hair is chestnut.
