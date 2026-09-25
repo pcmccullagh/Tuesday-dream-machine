@@ -30,6 +30,36 @@
                 "date": "2026-09-25"
             }
         ],
+        "candidates_v2": [
+            {
+                "file": "character_sheet/v2/cand_1.png",
+                "sha256": "8cbb51ebc1322642e90f769f56e0cef379d3ef70aa30d14c8fb072baa0b38f84",
+                "model": "Nano Banana via agy generate_image (exact model ID not exposed)",
+                "seed": null,
+                "date": "2026-09-25"
+            },
+            {
+                "file": "character_sheet/v2/cand_2.png",
+                "sha256": "2f7ac07566f76128b518ef7c599299b6a0ce09752b66bebe9fa6291a7aedc12c",
+                "model": "Nano Banana via agy generate_image (exact model ID not exposed)",
+                "seed": null,
+                "date": "2026-09-25"
+            },
+            {
+                "file": "character_sheet/v2/cand_3.png",
+                "sha256": "13b6c13f69f7bd0750407bcbfb75a983c392cbd4be34c86dab12745ba2ae91da",
+                "model": "Nano Banana via agy generate_image (exact model ID not exposed)",
+                "seed": null,
+                "date": "2026-09-25"
+            },
+            {
+                "file": "character_sheet/v2/cand_4.png",
+                "sha256": "cb19c90d97a90fb1701476b9874301f3dae2fe3448e89ec074e1cd8c45c5f1ca",
+                "model": "Nano Banana via agy generate_image (exact model ID not exposed)",
+                "seed": null,
+                "date": "2026-09-25"
+            }
+        ],
         "chosen": null
     },
     "scenes": {
