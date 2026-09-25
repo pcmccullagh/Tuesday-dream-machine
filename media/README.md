@@ -1,37 +1,48 @@
 # Media pipeline — scenes and audio
 
-Generation runs on the **Dell**, where Hermes and a Claude Code session live. The
-job specs in `media/jobs/` are the source of truth for every prompt. Generated
-files stay on the Dell (`media/out/`) and the Pi (`/opt/sleepbox/content/`), and
-are **never committed** (see `.gitignore`).
+Generation runs on the **Dell**. The job specs in `media/jobs/` are the source of
+truth for every prompt. Generated files live in `~/TuesdayDreamMachine-media/` on
+the Dell (and later `/opt/sleepbox/content/` on the Pi). They are **never
+committed** (see `.gitignore`).
 
-## Connecting the Dell session
-The Dell is available as the Claude Code environment `hermes`
-(`env_016pcKYjyhq4rsVQHdootgom`, a bridge environment). The project session starts a
-session there for each stage and gives it the job file contents.
-
-**All Nano Banana and Veo generation goes through Hermes using Antigravity.** The Dell
-session asks Hermes to run each job in Antigravity; nothing calls the Google APIs directly.
+## How generation runs
+- The Dell is the Claude Code environment `hermes` (`env_016pcKYjyhq4rsVQHdootgom`,
+  a bridge environment). The project session starts a Dell session per stage.
+- **Generation calls the Gemini API directly** through
+  `media/tools/gemini_media.py` (standard library only). The key is
+  `GEMINI_API_KEY` in `~/.hermes/.env`, which the script reads itself.
+  - Images: `gemini-3-pro-image` (Nano Banana Pro), with the character sheet as
+    a reference image.
+  - Video: `veo-3.1-generate-preview` (Veo 3.1), with `image` and `lastFrame`
+    both set to the keyframe. 8 s, 16:9, 720p.
+- Why not Antigravity: its CLI has no video tool, doesn't expose the model
+  version or seeds, and writes to a new random folder every run. (Round 1 and 2
+  character sheets were made with it before the API key was added.)
+- Veo 3.1 always generates an audio track. `build_loop.py` discards it; scene
+  audio comes from stage ME.
+- Every output gets a sidecar `<file>.json` (model, exact prompt, request
+  parameters, sha256, time) and a line in `generation_log.jsonl`. Nothing is
+  ever overwritten.
 
 ## Stages
 
-| Stage | Input | Hermes → Antigravity call | Output (on the Dell) | Gate |
-|---|---|---|---|---|
-| MA | `00_character_sheet.json` | Nano Banana, 4 candidates | `media/out/character_sheet/cand_{1..4}.png` | Peter picks one → `character_sheet.png` |
-| MB | `0N_<scene>.json` → `image` | Nano Banana, 4 candidates, reference = chosen character sheet | `media/out/<scene>/keyframe_{1..4}.png` | Peter picks one → `keyframe.png` |
-| MC | `0N_<scene>.json` → `video` | Veo image-to-video, **first frame = last frame = keyframe.png**, 8 s, no audio, 3 takes | `media/out/<scene>/take_{1..3}.mp4` | Discard takes with morphing faces or camera moves |
-| MD | good takes | — (local) | `content/<scene>.mp4`, `master_<scene>.mp4`, `<scene>.jpg` | Seam check passes; Peter watches 3+ min |
-| ME | CC0 recordings / synthesized | — (local) | `content/audio_<scene>.flac` | Loudness-matched, no audible wrap |
+| Stage | Command (on the Dell, repo root) | Output | Gate |
+|---|---|---|---|
+| MA | done (Antigravity, rounds 1–2); re-run: `gemini_media.py image media/jobs/00_character_sheet.json` | `character_sheet/…` | Peter picks one → copy to `character_sheet.png` |
+| MB | `gemini_media.py image media/jobs/0N_<scene>.json --ref ~/TuesdayDreamMachine-media/character_sheet.png` | `<scene>/keyframe_{n}.png` | Peter picks one → copy to `<scene>/keyframe.png` |
+| MC | `gemini_media.py video media/jobs/0N_<scene>.json --keyframe ~/TuesdayDreamMachine-media/<scene>/keyframe.png` | `<scene>/take_{n}.mp4` (3 takes) | Discard takes with morphing faces or camera moves |
+| MD | `build_loop.py <scene> take_a.mp4 take_b.mp4 …` | `content/<scene>.mp4`, `master_<scene>.mp4`, `<scene>.jpg` | Seam check passes; Peter watches 3+ min |
+| ME | `make_audio_loop.sh …` | `content/audio_<scene>.flac` | Loudness-matched, no audible wrap |
 
-Rules for Hermes calls:
+Rules:
 - Use the prompt text exactly as written in the job file. If a model rejects a
-  prompt, report back rather than rewording it silently. Campfire has an
-  approved `fallback_prompt`.
+  prompt, report it verbatim rather than rewording it. Campfire has an approved
+  `fallback_prompt` (`--fallback`).
 - **No photo of Tuesday is used anywhere.** Her likeness comes from the text
   description plus the generated character sheet.
-- Record every chosen output in `media/manifest.json`: file name, model and
-  version, seed if available, date, and SHA-256. The manifest IS committed; the
-  files are not.
+- Record every **chosen** output in `media/manifest.json` (file, model, sha256,
+  date). The manifest is committed; the files are not.
+- Try `--dry-run` first to see the exact request without spending anything.
 
 ## Why first frame = last frame
 Veo can't guarantee a seamless loop from a single start image. Pinning both ends
@@ -43,7 +54,7 @@ repaired after the fact.
 
 ## MD — building a loop
 ```
-python3 media/tools/build_loop.py ocean media/out/ocean/take_1.mp4 media/out/ocean/take_3.mp4 \
+python3 media/tools/build_loop.py ocean ~/TuesdayDreamMachine-media/ocean/take_1.mp4 ~/TuesdayDreamMachine-media/ocean/take_3.mp4 \
     --out-dir content --rotate cw [--repeat-minutes 10]
 ```
 - Normalizes each take to 1280×720 @ 24 fps and checks SSIM at every join and at

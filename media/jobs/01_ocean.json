@@ -4,7 +4,7 @@
   "name": "Ocean & Lighthouse",
   "accent": "rgba(120,170,220,0.55)",
   "image": {
-    "model": "nano-banana-2",
+    "model": "gemini-3-pro-image (Nano Banana Pro)",
     "aspect_ratio": "16:9",
     "min_resolution": "1280x720",
     "candidates": 4,
@@ -14,16 +14,16 @@
     "prompt": "Painterly illustration in a 70/30 style blend: primarily (70%) the atmospheric, painterly style of the animated series Scavengers Reign — muted naturalistic palette, organic textures, soft volumetric haze and lighting, subtle bioluminescent color accents — blended with (30%) the warm, soft style of Studio Ghibli background art. Gentle brushwork, soft diffused light, calm and cozy mood, no harsh shadows. No text, no logos, no watermark. Tuesday, a 3-year-old girl with a short blonde bob haircut with a soft fringe, rosy cheeks and a small button nose. She looks clearly three, not a baby: a slightly slimmer face that has lost most of its baby chubbiness, longer legs and a taller, steadier standing posture, proportions of a preschooler rather than an infant. She wears a simple cream sweater and stands on a grassy coastal headland, seen from slightly behind at three-quarter view, looking out at the ocean. Middle-right background: a white lighthouse with a red-roofed lamp room on the point, its window glowing warm gold, a soft beam of light in the air. Dusk blue-hour sky, deep indigo and soft lavender clouds, calm rolling waves below the cliff catching the last light. Tuesday in the lower third, generous sky above. Horizontal 16:9 landscape composition."
   },
   "video": {
-    "model": "veo (latest version supporting first+last frame)",
+    "model": "veo-3.1-generate-preview",
     "mode": "image_to_video",
     "first_frame": "keyframe",
     "last_frame": "keyframe",
     "duration_s": 8,
     "aspect_ratio": "16:9",
-    "resolution": "720p or higher",
-    "generate_audio": false,
+    "resolution": "720p",
     "takes": 3,
     "prompt": "The lighthouse beam sweeps smoothly and steadily across the sky, one full sweep that ends where it began. Ocean waves roll gently and rhythmically below the cliff in a steady swell. Clouds drift almost imperceptibly. Tuesday stands still; only a light sway of her hair in the sea breeze. Calm, ambient dusk. Locked-off static camera: no camera movement, no zoom, no pan. Slow, continuous, cyclical, steady-state motion only — nothing that builds, changes pose, or tells a story. Lighting and color held constant throughout. The final frame returns exactly to the starting image so the clip loops seamlessly. No text, no captions, no audio.",
-    "negative_prompt": "camera movement, zoom, pan, cuts, scene change, lighting change, new characters, text, subtitles, morphing faces, extra limbs"
+    "negative_prompt": "camera movement, zoom, pan, cuts, scene change, lighting change, new characters, text, subtitles, morphing faces, extra limbs",
+    "audio_note": "Veo 3.1 always generates audio; build_loop.py discards it"
   }
 }

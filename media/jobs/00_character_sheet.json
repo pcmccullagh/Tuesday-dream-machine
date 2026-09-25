@@ -3,7 +3,7 @@
   "stage": "MA",
   "notes": "Text-only likeness by design (no photo of Tuesday is used anywhere). This sheet is the consistency anchor that every scene keyframe references. Peter approves it before MB.",
   "image": {
-    "model": "nano-banana-2",
+    "model": "gemini-3-pro-image (Nano Banana Pro)",
     "aspect_ratio": "16:9",
     "candidates": 4,
     "reference_images": [],
