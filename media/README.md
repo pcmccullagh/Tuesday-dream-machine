@@ -6,19 +6,16 @@ files stay on the Dell (`media/out/`) and the Pi (`/opt/sleepbox/content/`), and
 are **never committed** (see `.gitignore`).
 
 ## Connecting the Dell session
-The Claude Code session in this repo runs in the cloud and can't reach the Dell
-on its own. On the Dell, open a terminal in the Hermes working folder and run:
+The Dell is available as the Claude Code environment `hermes`
+(`env_016pcKYjyhq4rsVQHdootgom`, a bridge environment). The project session starts a
+session there for each stage and gives it the job file contents.
 
-```
-claude remote-control
-```
-
-That session then becomes reachable from this project's session, which can send
-it one job at a time ("run media/jobs/01_ocean.json, keyframe stage").
+**All Nano Banana and Veo generation goes through Hermes using Antigravity.** The Dell
+session asks Hermes to run each job in Antigravity; nothing calls the Google APIs directly.
 
 ## Stages
 
-| Stage | Input | Hermes call | Output (on the Dell) | Gate |
+| Stage | Input | Hermes → Antigravity call | Output (on the Dell) | Gate |
 |---|---|---|---|---|
 | MA | `00_character_sheet.json` | Nano Banana, 4 candidates | `media/out/character_sheet/cand_{1..4}.png` | Peter picks one → `character_sheet.png` |
 | MB | `0N_<scene>.json` → `image` | Nano Banana, 4 candidates, reference = chosen character sheet | `media/out/<scene>/keyframe_{1..4}.png` | Peter picks one → `keyframe.png` |
