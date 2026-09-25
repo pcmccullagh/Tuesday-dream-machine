@@ -129,3 +129,50 @@ This section isolates the HTTP 400 "Your use case is currently not supported" er
 T3 notes: the three-figure character sheet cross-dissolves into a generated lighthouse scene by about 1.5 s. Tuesday is gone from the rest of the clip, which is why SSIM is low. That's expected when the input is a turnaround sheet rather than a scene keyframe, so it says nothing about how a real keyframe would behave. The renamed sidecars point to the `diag_*` names. `generation_log.jsonl` still lists them as `ocean/take_1.mp4`.
 
 **Conclusion.** The refusal comes from `lastFrame` on Veo 3.1 Lite. Tuesday and child content aren't the cause. Lite rejects any request that pins a last frame, even a person-free one (T1), and it accepts the same image without it (T2). It also accepted the illustrated child image with no `personGeneration` parameter (T3), so this API key can animate an image containing Tuesday. First = last frame works on `veo-3.1-fast-generate-preview`: T6 was accepted with `negativePrompt`, and its first and last frames match closely (SSIM 0.977), so loopable takes are viable on Fast (and presumably standard). The MC plan isn't blocked. Loop takes just can't use Lite. Next step: one Fast first=last take from a real `ocean/keyframe_*.jpg` (with Tuesday in the scene) to confirm she survives the loop and to check SSIM.
+
+## 2026-09-25 — Stage MB — keyframes
+
+Generated on the Dell with `media/tools/gemini_media.py` (Gemini API, `gemini-3-pro-image` / Nano Banana Pro). No video was generated.
+
+**Character sheet:** Peter chose round-2 `character_sheet/v2/cand_1.png`. It was copied to `~/TuesdayDreamMachine-media/character_sheet.png` (sha256 `8cbb51ebc132…`, verified).
+
+**Keyframes:** for each scene, `image media/jobs/0N_<scene>.json --ref ~/TuesdayDreamMachine-media/character_sheet.png`, 4 candidates each (16 total), prompts exactly as written.
+- **Refusals: none.** All 16 returned an image, including campfire on the main (named-character) prompt, so `--fallback` was not run.
+- The API returned JPEGs, all 1376x768 (16:9). Files are `<scene>/keyframe_{1..4}.jpg`, not `.png`, so MC commands should point at `.jpg` (or convert when copying to `keyframe.png`).
+
+Review notes (one line per keyframe):
+- `ocean/keyframe_1.jpg` (`0050f07dccb2`) — Seen straight from behind, so there's no face to check, only the bob (correct colour and shape). Cropped at the waist, centre-bottom, and the head reads large. Lighthouse middle-right with a strong beam, generous sky, 16:9. Style consistent. No artifacts.
+- `ocean/keyframe_2.jpg` (`07eed8c7f034`) — Full figure in three-quarter back/profile, left of centre. Reads as about 3 with a good bob and rosy cheek. Wears dark trousers (not in the sheet). Lighthouse right, beam faint. She sits more mid-frame than lower third. No artifacts.
+- `ocean/keyframe_3.jpg` (`1f65ca461c3c`) — Full figure in profile on the left, all-cream outfit closest to the sheet, reads as about 3. Brighter, puffier Ghibli cumulus than the other scenes. She is mid-left rather than lower third. No artifacts.
+- `ocean/keyframe_4.jpg` (`69c46a228b92`) — Over-the-shoulder three-quarter back view, lower right, cheek and eye visible and on-model. Lighthouse middle-right with beam, cliff and waves, lots of sky: the closest match to the prompt. Cropped at the waist. No artifacts.
+- `rain/keyframe_1.jpg` (`efc96bde6a22`) — Face and bob match, reads as about 3, looking up. Centred low, cropped at the knees, hood down, trees framing both sides. No artifacts.
+- `rain/keyframe_2.jpg` (`fd4efe2b3abf`) — Full figure, small, centred in the lower third behind a mossy log, canopy opening above, strong framing trunks. Face on-model and reads as about 3. No artifacts.
+- `rain/keyframe_3.jpg` (`73cb42e2726a`) — Front-facing and the closest face match to the sheet, symmetrical. Cropped at the thighs, so she's a bit large in frame. No artifacts.
+- `rain/keyframe_4.jpg` (`4a44b7de9b2a`) — Face a little rounder and younger, looking up. Heavier bioluminescent mushrooms. Cropped at the thighs, red collar showing. No artifacts.
+- `space/keyframe_1.jpg` (`f617b2f43472`) — Face and bob on-model, eyes closed, sheet-style pajamas. The moon and Tuesday sit right of centre, not centred. Very red nose tip (this is also true of the sheet). No artifacts.
+- `space/keyframe_2.jpg` (`baac03410447`) — Roughly centred. The moon has a busy swirled-crater texture and the four-point sparkle stars are larger, so it feels less calm. Face on-model. No artifacts.
+- `space/keyframe_3.jpg` (`27abf74bab50`) — Centred on a clean glowing crescent with pastel nebula around it: the calmest and most on-prompt. Face, bob and pajamas match the sheet. No artifacts.
+- `space/keyframe_4.jpg` (`0041124e19d1`) — Centred, but moss and foliage grow on the moon and on floating rock islands (Scavengers Reign pushed too far), which makes it less calm. Face on-model. No artifacts.
+- `campfire/keyframe_1.jpg` (`1fb89cb7452e`) — Tuesday on-model. **Bluey is not recognizable:** it's a semi-realistic blue heeler, not the show design. Frog and Toad are unclothed, generic frog and toad, so not recognizably Lobel's. Composition fine. No artifacts.
+- `campfire/keyframe_2.jpg` (`910cb60da1a0`) — Bluey recognizable (face, markings, a little long in the snout). Frog and Toad in jackets and trousers, recognizable. Tuesday in red-striped pajamas (off-sheet), face on-model. Frog's hands and feet are fine on close inspection.
+- `campfire/keyframe_3.jpg` (`3c6456fb9e82`) — Bluey recognizable. Frog and Toad unclothed on a log, so only semi-recognizable. Tuesday on-model, sitting next to Bluey on the left. No artifacts.
+- `campfire/keyframe_4.jpg` (`32f1b2c35a32`) — Bluey the most recognizable (eyes, brow markings, colours). Frog (green jacket) and Toad (brown jacket, white shirt) are the most Lobel-like. Tuesday is a strong face match in sheet-style pajamas. **Artifact:** a glowing plant stalk upper-left (~x240, y260) reads as a pair of glowing creature eyes in the trees. It's small, but it's spooky for bedtime, and Veo might animate it.
+
+Style consistency across scenes: good. All 16 share the same painterly Ghibli/Scavengers Reign look, teal bioluminescent specks, and the same Tuesday design (bob, fringe, rosy cheeks, red nose tip). Nothing had extra limbs or text.
+
+**Top picks (for Peter to confirm):**
+- **Ocean: keyframe_4.** It's the only one that meets all of "slightly behind at three-quarter view", "lower third", "lighthouse middle-right" and "generous sky", and the partial face is on-model. Runner-up: keyframe_2 (full figure).
+- **Rain: keyframe_2.** Full figure in the lower third, trunks framing both sides, canopy opening above. A small figure also means less face for Veo to morph. Runner-up: keyframe_3 (best face match, but a large crop).
+- **Space: keyframe_3.** Centred, cleanest crescent, calmest image, sheet-accurate pajamas.
+- **Campfire: keyframe_4.** Best Bluey and best Frog and Toad, and on-model Tuesday. Watch the "glowing eyes" plant upper-left. If that's a problem, use keyframe_2 as the runner-up.
+
+**Empty plates (Veo contingency):** one per scene, using that scene's `keyframe_1.jpg` as the reference (read literally as "candidate 1"; the top picks weren't chosen until after generation). Temporary job JSONs lived in `/tmp` only, never the repo. Each was a copy of the scene job with `candidates: 1` and `image.prompt` = the job prompt with every sentence that mentions Tuesday or the characters removed. That includes rain's "…with the yellow raincoat as the single saturated warm color" and space's two sentences containing "her", which leaves space with only the style preamble. The required "The scene is empty — no people…" sentence was then added.
+- **Script caveat:** with `--ref`, the script always appends "The attached image is Tuesday's character reference sheet: match her face, hair, age and proportions exactly…". That contradicts an empty-plate prompt, and it probably caused the ocean failure below. Outputs were written as `keyframe_5` and renamed to `plate_N` (image and sidecar). The sidecar's `file` field and the `generation_log.jsonl` entry still say `keyframe_5.jpg`.
+- `ocean/plate_1.jpg` (`54465c363d3e`) — **Not empty:** a small full-figure Tuesday stands left of centre. Otherwise it's a near-identical match to keyframe_1. One retry was allowed:
+- `ocean/plate_2.jpg` (`fd975e6752af`) — **Empty**, and a near-exact match to keyframe_1's composition, lighting and palette. Use this one.
+- `rain/plate_1.jpg` (`378ab5f27ede`) — **Empty**, and a near-exact match to keyframe_1 (same trunks, ferns and mushrooms). Good.
+- `space/plate_1.jpg` (`66fe929a5601`) — Empty, but **wrong scene:** an alien Scavengers Reign landscape with no moon and a brown sky. Doesn't match. One retry was allowed:
+- `space/plate_2.jpg` (`2b0081500c76`) — **Empty.** The starfield and nebula match keyframe_1 closely (same star positions and pink nebula at left), but **the crescent moon is gone**, replaced by mossy floating islands. Only a partial match. The prompt had no moon text left once the "her" sentences were removed.
+- `campfire/plate_1.jpg` (`5b6351860c37`) — **Empty.** It matches keyframe_1 closely: same fire, logs, treeline, stars and glow plants. Good.
+
+Waiting on: **Peter picks a keyframe per scene** → copy to `<scene>/keyframe.png` and record it in the manifest. The plates are keyed to keyframe_1. If Veo refuses the pick and the contingency is needed, a plate matching the chosen keyframe would need a new run (and a script option to skip the character-sheet suffix).
