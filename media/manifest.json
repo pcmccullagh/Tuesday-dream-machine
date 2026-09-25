@@ -60,7 +60,13 @@
                 "date": "2026-09-25"
             }
         ],
-        "chosen": null
+        "chosen": {
+            "file": "character_sheet/v2/cand_1.png",
+            "copied_to": "character_sheet.png",
+            "sha256": "8cbb51ebc1322642e90f769f56e0cef379d3ef70aa30d14c8fb072baa0b38f84",
+            "chosen_by": "Peter",
+            "date": "2026-09-25"
+        }
     },
     "scenes": {
         "ocean": {},
