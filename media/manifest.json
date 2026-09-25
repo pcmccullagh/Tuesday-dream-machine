@@ -1,5 +1,37 @@
 {
-    "character_sheet": null,
+    "character_sheet": {
+        "candidates": [
+            {
+                "file": "character_sheet/cand_1.png",
+                "sha256": "a217b26effea2aa0919295da5e01b07f2d0026664519c916329cc28b37945c8c",
+                "model": "Nano Banana via agy generate_image (exact model ID not exposed)",
+                "seed": null,
+                "date": "2026-09-25"
+            },
+            {
+                "file": "character_sheet/cand_2.png",
+                "sha256": "9788a2e6b66a7ba4803c17d3660e8cfbcb2a4ad78feb594d2f69e0790ca55a83",
+                "model": "Nano Banana via agy generate_image (exact model ID not exposed)",
+                "seed": null,
+                "date": "2026-09-25"
+            },
+            {
+                "file": "character_sheet/cand_3.png",
+                "sha256": "9a1663b01152a7ec693df3f23bbd29c42ab0563ab28617fc798240f8a6029e0f",
+                "model": "Nano Banana via agy generate_image (exact model ID not exposed)",
+                "seed": null,
+                "date": "2026-09-25"
+            },
+            {
+                "file": "character_sheet/cand_4.png",
+                "sha256": "34e08184c92149eb866a67e27b719bfcdab286e005ebe85f4591e54ca698c74f",
+                "model": "Nano Banana via agy generate_image (exact model ID not exposed)",
+                "seed": null,
+                "date": "2026-09-25"
+            }
+        ],
+        "chosen": null
+    },
     "scenes": {
         "ocean": {},
         "rain": {},
