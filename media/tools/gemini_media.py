@@ -131,12 +131,14 @@ def cmd_video(args, job):
     mime, data = inline_image(args.keyframe)
     # The docs' REST example uses {"inlineData": ...}, but the API rejects it ("`inlineData` isn't supported").
     frame = {"bytesBase64Encoded": data, "mimeType": mime}
-    instance = {"prompt": spec["prompt"], "image": frame}
+    instance = {"prompt": args.prompt or spec["prompt"], "image": frame}
     if not args.no_last_frame:
         instance["lastFrame"] = frame          # first frame == last frame -> loopable take
     params = {"aspectRatio": spec.get("aspect_ratio", "16:9"),
               "durationSeconds": int(args.duration or spec.get("duration_s", 8)),
               "resolution": spec.get("resolution", "720p")}
+    if args.person_generation:
+        params["personGeneration"] = args.person_generation
     if spec.get("negative_prompt") and "lite" not in model:  # Lite rejects negativePrompt (HTTP 400)
         params["negativePrompt"] = spec["negative_prompt"]
     body = {"instances": [instance], "parameters": params}
@@ -174,6 +176,9 @@ def main():
     ap.add_argument("--fallback", action="store_true", help="use the job's fallback_prompt (campfire)")
     ap.add_argument("--keyframe", type=Path, help="first (and last) frame for video mode")
     ap.add_argument("--duration", type=int, choices=[4, 6, 8], help="override clip length (video)")
+    ap.add_argument("--person-generation", choices=["allow_all", "allow_adult", "dont_allow"],
+                    help="Veo personGeneration parameter (omitted by default)")
+    ap.add_argument("--prompt", help="override the job prompt (for diagnostics only)")
     ap.add_argument("--no-last-frame", action="store_true", help="don't pin the last frame (not loopable)")
     ap.add_argument("--dry-run", action="store_true", help="print the request body and exit")
     args = ap.parse_args()
