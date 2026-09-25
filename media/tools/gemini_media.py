@@ -185,6 +185,8 @@ def main():
     job = json.loads(args.job.read_text())
     if args.kind == "video" and not args.keyframe:
         ap.error("video needs --keyframe")
+    if args.kind == "video" and "lite" in (args.model or VIDEO_MODEL) and not args.no_last_frame:
+        ap.error("Veo Lite rejects lastFrame (HTTP 400 'use case not supported'); use standard or fast, or --no-last-frame")
     if args.n is None:
         args.n = job.get(args.kind, {}).get("candidates" if args.kind == "image" else "takes", 1)
     (cmd_image if args.kind == "image" else cmd_video)(args, job)
