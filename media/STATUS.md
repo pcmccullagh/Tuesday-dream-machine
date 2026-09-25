@@ -202,3 +202,11 @@ Peter's feedback on round 1: the art style is right. Tuesday's hair is darker no
 - **8 is the pick:** full-figure Tuesday in the lower right, three-quarter back view with her cheek showing. Lighthouse right with its beam, generous sky, and the clearest mermaid (the shell top is easy to read) on the left in the waves. Hair is chestnut.
 
 **Keyframes chosen (Peter, 2026-09-25):** ocean `keyframe_8`, rain `keyframe_6`, space `keyframe_8`, campfire `keyframe_6`. Each was converted losslessly from its JPEG to `<scene>/keyframe.png` and recorded in `media/manifest.json`. Stage MB is done. Next is MC (Veo takes from `<scene>/keyframe.png`, first frame = last frame, on Fast or standard, not Lite).
+
+
+## 2026-09-25 — Stage MC test (one take)
+
+Model: `veo-3.1-generate-preview` (standard), 8 s, 720p, `image` = `lastFrame` = `<scene>/keyframe.png`, job prompts unmodified. Spend: 1 refused request and 1 completed clip.
+- **Ocean: refused**, no video. Verbatim: `{"raiMediaFilteredCount": 1, "raiMediaFilteredReasons": ["You cannot generate a response to this prompt due to Google's guardrails related to third-party content."]}`. The video prompt names only Tuesday, so the trigger is the Ariel-lookalike mermaid in the keyframe image. Campfire (Bluey, Frog and Toad) will very likely be refused the same way. Not retried.
+- **Rain: success**, `rain/take_1.mp4` (sha256 `ad2f87ab1174…`): H.264 1280x720, 24 fps, 192 frames, 8.0 s, plus an AAC track (discarded later). Loop seam SSIM (first vs last frame) **0.974**, just over build_loop's 0.97 threshold. SSIM of keyframe vs frame 0 is 0.81 (rescale from 1376x768 plus grain and rain overlay; the joins compare take frames with each other, so this doesn't affect them). Tuesday stays on-model and still. Veo added fern fronds and dripping leaves that slide in at the left and right edges mid-clip, from the prompt's "drips from leaf tips at the edges of frame", and they're gone again by the last frame.
+- OpenRouter has no video-output models (checked `/api/v1/models`: image and audio models only, no Seedance/Seedream), so it isn't a route for MC.
