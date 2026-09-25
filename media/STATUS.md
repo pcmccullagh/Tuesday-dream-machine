@@ -200,3 +200,5 @@ Peter's feedback on round 1: the art style is right. Tuesday's hair is darker no
 - Every candidate has the mermaid, small and far out in the waves: stomach-down on a rock, back arched, chin on her hands, green tail, red hair, purple shell top. She reads clearly as Ariel.
 - 5, 6, 7: Tuesday is a large over-the-shoulder figure cropped at the waist or hip, not in the lower third. In 7 she wears dark trousers.
 - **8 is the pick:** full-figure Tuesday in the lower right, three-quarter back view with her cheek showing. Lighthouse right with its beam, generous sky, and the clearest mermaid (the shell top is easy to read) on the left in the waves. Hair is chestnut.
+
+**Keyframes chosen (Peter, 2026-09-25):** ocean `keyframe_8`, rain `keyframe_6`, space `keyframe_8`, campfire `keyframe_6`. Each was converted losslessly from its JPEG to `<scene>/keyframe.png` and recorded in `media/manifest.json`. Stage MB is done. Next is MC (Veo takes from `<scene>/keyframe.png`, first frame = last frame, on Fast or standard, not Lite).

@@ -69,9 +69,53 @@
         }
     },
     "scenes": {
-        "ocean": {},
-        "rain": {},
-        "space": {},
-        "campfire": {}
+        "ocean": {
+            "keyframe": {
+                "file": "ocean/keyframe_8.jpg",
+                "sha256": "cda74602d4f1ac9c60800fa2948e88a16ec6d25181f626351752268d3d0eb4f6",
+                "copied_to": "ocean/keyframe.png",
+                "copied_sha256": "09d9558d8a66b591306f83762f2baf41343dc1783d9b3566055626e3ad9b6cb2",
+                "model": "gemini-3-pro-image",
+                "reference": "character_sheet.png",
+                "chosen_by": "Peter",
+                "date": "2026-09-25"
+            }
+        },
+        "rain": {
+            "keyframe": {
+                "file": "rain/keyframe_6.jpg",
+                "sha256": "4be8d503e3a0ac23edef79147b6066b49aabed57c5c064a748c060c363f9a82d",
+                "copied_to": "rain/keyframe.png",
+                "copied_sha256": "3d6691e79be28358a0b3d595b74250ece6b6266411b63da1756d12885bab88c9",
+                "model": "gemini-3-pro-image",
+                "reference": "character_sheet.png",
+                "chosen_by": "Peter",
+                "date": "2026-09-25"
+            }
+        },
+        "space": {
+            "keyframe": {
+                "file": "space/keyframe_8.jpg",
+                "sha256": "085917fc9bf8f7a7c67ad8da72c70056ad86143528a85fd8d1f72546dab753dd",
+                "copied_to": "space/keyframe.png",
+                "copied_sha256": "9133f724267990e04492bbba9300d508d00d41582d1780778a6ed54914f48d06",
+                "model": "gemini-3-pro-image",
+                "reference": "character_sheet.png",
+                "chosen_by": "Peter",
+                "date": "2026-09-25"
+            }
+        },
+        "campfire": {
+            "keyframe": {
+                "file": "campfire/keyframe_6.jpg",
+                "sha256": "13e56999c2423e136e870e21e9b33be007ea17c85d412b210a21675060bc179c",
+                "copied_to": "campfire/keyframe.png",
+                "copied_sha256": "604b78ff614a9497b14762f722e7d8c13ab54c0c1ef8d7382736ec7f56b1a09a",
+                "model": "gemini-3-pro-image",
+                "reference": "character_sheet.png",
+                "chosen_by": "Peter",
+                "date": "2026-09-25"
+            }
+        }
     }
 }
