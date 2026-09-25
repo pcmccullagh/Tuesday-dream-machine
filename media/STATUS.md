@@ -176,3 +176,22 @@ Style consistency across scenes: good. All 16 share the same painterly Ghibli/Sc
 - `campfire/plate_1.jpg` (`5b6351860c37`) — **Empty.** It matches keyframe_1 closely: same fire, logs, treeline, stars and glow plants. Good.
 
 Waiting on: **Peter picks a keyframe per scene** → copy to `<scene>/keyframe.png` and record it in the manifest. The plates are keyed to keyframe_1. If Veo refuses the pick and the contingency is needed, a plate matching the chosen keyframe would need a new run (and a script option to skip the character-sheet suffix).
+
+
+## 2026-09-25 — Stage MB round 2 (Peter's revisions)
+
+Peter's feedback on round 1: the art style is right. Tuesday's hair is darker now (chestnut blonde). Ocean should get a small Ariel easter egg on a rock in the waves. Campfire: Bluey should sit the way she does in the show, and Frog and Toad should wear their outfits. Space: Tuesday lying asleep on the moon under a blanket.
+
+**Changes (committed):**
+- All five job prompts: "a short blonde bob haircut" → "a short chestnut-blonde bob haircut (a darker, warm honey-brown blonde)". The character sheet image itself was not regenerated (it's still v2 cand_1, light blonde).
+- `gemini_media.py` `--ref` note: it used to say "match her face, hair, …exactly", which would copy the sheet's light blonde. It now says "match her face, haircut, age and proportions exactly, but take her hair colour from the text above…".
+- Ocean: added the Ariel easter-egg sentence and a `licensing` note. Campfire: Bluey "sitting exactly as she does in the show: upright on her bottom like a child…", and Frog and Toad "wearing their classic outfits from Arnold Lobel's books: jackets, shirts and trousers in muted greens and browns" (fallback prompt updated to match). Space: "lies curled up asleep along the inside curve of a glowing crescent moon… a soft cozy blanket tucked over her."
+
+**Refusal — ocean, 4 of 4 attempts**, no image, verbatim for each: `{"candidates": [{"content": {}, "finishReason": "PROHIBITED_CONTENT", "index": 0}], …, "modelVersion": "gemini-3-pro-image"}`. The only change from the round-1 ocean prompt (which rendered 4 of 4) is the named Ariel/Disney sentence and the hair colour, so the named Disney character is almost certainly the trigger. Per the rules, the prompt was not reworded. Waiting on Peter to approve an unnamed description.
+
+**New candidates (`keyframe_5`–`8`, JPEG 1376x768), no other refusals:**
+- Hair: chestnut in all 12, reading as darker honey-brown. rain_5 and campfire_5 lean more ginger/auburn than the rest. Face, age and style are consistent with round 1.
+- `space/keyframe_5`–`8` — All four show her curled asleep on the crescent under a blanket. 5 has a teal-tinted moon (off-palette). 6 has a horizon band at the bottom. 7 is good. **8 is the pick**: warm glowing crescent, centred, hands tucked under her cheek, blanket draped over the tip. Calmest of the set.
+- `campfire/keyframe_5`–`8` — Bluey sits show-style (upright, legs out front, paws in lap) and is fully on-model in all four. Frog and Toad wear jackets, shirts and trousers in all four. 5 has Tuesday in a green outfit with auburn hair. 8 has the fire cropped at the bottom edge and is dark. 7 is good (Bluey left, Frog and Toad on a log right). **6 is the pick**: Frog and Toad the most book-like (Toad in a green jacket, Frog in a brown one), clean composition, no spooky glow artifacts.
+- `rain/keyframe_5`–`8` — 5 has auburn hair and a knee crop. 7 is front-facing, cropped at the chest. 8 is good. **6 is the pick**: full figure in the lower third, boots, framed trunks.
+- Round-1 files and the plates are untouched. The plates still show round-1 compositions.

@@ -97,8 +97,9 @@ def cmd_image(args, job):
     model = args.model or IMAGE_MODEL
     prompt = spec["prompt"] if not args.fallback else spec["fallback_prompt"]
     if args.ref:
-        prompt += (" The attached image is Tuesday's character reference sheet: match her face, hair,"
-                   " age and proportions exactly, but do not copy its layout, pose, outfit or background.")
+        prompt += (" The attached image is Tuesday's character reference sheet: match her face, haircut,"
+                   " age and proportions exactly, but take her hair colour from the text above, and do not"
+                   " copy its layout, pose, outfit or background.")
     parts = [{"text": prompt}]
     for ref in args.ref:
         mime, data = inline_image(ref)
