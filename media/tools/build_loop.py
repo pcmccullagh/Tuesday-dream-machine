@@ -85,6 +85,10 @@ def main():
     ap.add_argument("--tail-search", type=int, default=12,
                     help="cut each take at the best-matching of its last N frames (1 = always the final frame)")
     ap.add_argument("--force", action="store_true", help="encode even if a seam fails")
+    ap.add_argument("--chain-only", type=Path, metavar="OUT",
+                    help="write the chained takes (no vignette, CRF 10, plus a closing copy of frame 0) "
+                         "for post-processing, then stop. Feed the result back in as a single take "
+                         "with --tail-search 1.")
     args = ap.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -122,6 +126,17 @@ def main():
             inputs += ["-i", str(path)]
             parts.append(f"[{i}:v]trim=end_frame={cut},setpts=PTS-STARTPTS[v{i}]")
         chain = "".join(f"[v{i}]" for i in range(len(norm)))
+        if args.chain_only:
+            # Closing frame = take 0's first frame, so the chain is a closed loop
+            # that a second build_loop pass (--tail-search 1) cuts exactly.
+            inputs += ["-i", str(norm[0])]
+            parts.append(f"[{len(norm)}:v]trim=end_frame=1,setpts=PTS-STARTPTS[close]")
+            graph = ";".join(parts) + f";{chain}[close]concat=n={len(norm) + 1}:v=1:a=0[out]"
+            run(["ffmpeg", "-hide_banner", "-y", *inputs, "-filter_complex", graph, "-map", "[out]",
+                 "-c:v", "libx264", "-crf", "10", "-preset", "fast", "-pix_fmt", "yuv420p", "-r", str(FPS),
+                 str(args.chain_only)])
+            print(f"chain: {args.chain_only}  {sum(cuts) + 1} frames ({sum(cuts)} + closing frame)")
+            return
         graph = ";".join(parts) + f";{chain}concat=n={len(norm)}:v=1:a=0"
         if args.vignette != "none":
             graph += f",vignette={args.vignette}"

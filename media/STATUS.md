@@ -231,3 +231,22 @@ Model: `veo-3.1-generate-preview` (standard), 8 s, 720p, first = last frame, job
 **Campfire:** not started on Veo (the same third-party refusal is expected). Waiting on Peter to run the Wan workflow. `campfire/wan_input_832x464.png` is prepared.
 
 Veo spend for this batch: 9 completed 8 s clips (plus the earlier refused ocean request).
+
+## 2026-09-25 — Stage MC revisions: rotating lighthouse beam, space twinkle and breathing only
+
+Peter's feedback on the previous batch: the lighthouse light shaft "looks terrible". It should rotate like a true lighthouse. Space: he doesn't like the animations and wants only twinkling stars and subtle breathing for Tuesday.
+
+**Veo credits ran out.** Two test takes with revised video prompts both failed before generation with `HTTP 402 … "Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing."` Nothing was generated or charged. The prompt edits were reverted, so the job files still match the takes that exist. Both revisions below were then done locally, with no API spend.
+
+**Space: procedural, no video model** (`media/tools/animate_still.py`). Output `space/anim_1.mp4`: 24 s at 24 fps, 1376x768, plus a closing frame.
+- 313 stars detected by a two-scale white top-hat (small points, plus the big four-point sparkles at a higher threshold). The moon body, the moon tips and Tuesday are excluded. Each star's own light pulses with a random phase and a period of 3–24 s (a whole number of cycles per loop), dimming by up to 70%.
+- Breathing: a smooth Gaussian bump over her back and blanket (centre 710,440, σ 55, 2.5 px along the back's normal), once every 4 s. Her face, hair, the moon and the clouds are untouched. A per-pixel motion-range map confirms only the stars and her back and blanket move (1.9% of pixels).
+- Loop: `content/master_space.mp4` (24.0 s), wrap SSIM **0.998**. The earlier Veo loop is kept as `content/*space_veo_v1*`.
+
+**Ocean: Veo waves, static sky, rendered beam** (`build_loop.py --chain-only`, `media/tools/lighthouse_beam.py`).
+1. `ocean/keyframe_nobeam.png`: the painted beam was removed from the no-mermaid keyframe (the low-frequency haze inside a feathered wedge was replaced with inpainted low frequencies, keeping the cloud texture).
+2. The three existing Veo takes (mermaid composited) were chained with `--chain-only` into `ocean/chain_v1.mp4` (556 + 1 closing frame; seams 0.986–0.989).
+3. `lighthouse_beam.py`: above the horizon, every frame uses the static beam-free sky (`ocean/sky_mask.png`), except a halo around Tuesday's head that keeps Veo's hair sway. The halo is widened to the right, where her hair blows back, so the strands aren't clipped. Veo's hard wedge never reaches it. Below the horizon (sea, mermaid, cliff, grass) stays Veo. The beam is two opposed soft cones built from 3D splats at half resolution. They are foreshortened as they turn, flare softly as they face the viewer, and are hidden behind the hand-traced tower silhouette (`ocean/tower_mask.png`) as they face away. The haze texture comes from the clouds, with a screen blend and soft opacity roll-off. 2 full turns per loop (about 11.6 s per turn), so the closing frame equals frame 0.
+4. Loop: `content/master_ocean.mp4` (23.2 s), wrap SSIM **0.993**. The earlier loop is kept as `content/*ocean_veo_v1*`.
+
+Campfire is unchanged (waiting on the Wan run on Peter's PC). Rain is unchanged (its takes still use Veo). The loops aren't approved or in the manifest yet.
