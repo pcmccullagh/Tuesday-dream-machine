@@ -1,0 +1,31 @@
+{
+  "id": "campfire",
+  "stage": "MB/MC",
+  "name": "Campfire",
+  "accent": "rgba(240,170,110,0.55)",
+  "licensing": "Bluey (Ludo Studio/BBC) and Frog and Toad (Arnold Lobel estate) are copyrighted characters. Private, non-commercial use on a device in Tuesday's room only. Rendered files must never be committed, published or shared. If the named-character prompt is refused or off-model, use image.fallback_prompt.",
+  "image": {
+    "model": "nano-banana-2",
+    "aspect_ratio": "16:9",
+    "min_resolution": "1280x720",
+    "candidates": 4,
+    "reference_images": [
+      "character_sheet"
+    ],
+    "prompt": "Painterly illustration in a 70/30 style blend: primarily (70%) the atmospheric, painterly style of the animated series Scavengers Reign — muted naturalistic palette, organic textures, soft volumetric haze and lighting, subtle bioluminescent color accents — blended with (30%) the warm, soft style of Studio Ghibli background art. Gentle brushwork, soft diffused light, calm and cozy mood, no harsh shadows. No text, no logos, no watermark. Tuesday, a 2-year-old toddler girl with a short blonde bob haircut with a soft fringe, a soft round toddler face, rosy cheeks, small button nose, and toddler proportions (large head relative to body, short limbs). She wears cozy pajamas and sits cross-legged by a warm campfire at night. On one side of the fire sits Bluey, the blue heeler puppy from the children's show Bluey. On the other side sit Frog and Toad, the storybook characters, seated together. Warm orange and gold firelight lights their faces from below, embers drift upward into a dark indigo night sky, a soft silhouette of pine trees forms the treeline. The group centered in the lower half, a few soft stars above. Horizontal 16:9 landscape composition.",
+    "fallback_prompt": "Painterly illustration in a 70/30 style blend: primarily (70%) the atmospheric, painterly style of the animated series Scavengers Reign — muted naturalistic palette, organic textures, soft volumetric haze and lighting, subtle bioluminescent color accents — blended with (30%) the warm, soft style of Studio Ghibli background art. Gentle brushwork, soft diffused light, calm and cozy mood, no harsh shadows. No text, no logos, no watermark. Tuesday, a 2-year-old toddler girl with a short blonde bob haircut with a soft fringe, a soft round toddler face, rosy cheeks, small button nose, and toddler proportions (large head relative to body, short limbs). She wears cozy pajamas and sits cross-legged by a warm campfire at night with three animal friends: a small cheerful blue-and-tan cattle-dog puppy on one side, and on the other a tall green frog and a stout brown toad in little waistcoats sitting together. Warm firelight, drifting embers, dark indigo sky, pine treeline silhouette. Horizontal 16:9 landscape composition."
+  },
+  "video": {
+    "model": "veo (latest version supporting first+last frame)",
+    "mode": "image_to_video",
+    "first_frame": "keyframe",
+    "last_frame": "keyframe",
+    "duration_s": 8,
+    "aspect_ratio": "16:9",
+    "resolution": "720p or higher",
+    "generate_audio": false,
+    "takes": 3,
+    "prompt": "The campfire flames flicker continuously and naturally; embers drift upward and fade at a steady, repeating rate. Tuesday and her companions stay mostly still with only tiny idle movements — a slight tail wag, an occasional blink — nothing that reads as a one-time gesture. Firelight held at constant intensity. Locked-off static camera: no camera movement, no zoom, no pan. Slow, continuous, cyclical, steady-state motion only — nothing that builds, changes pose, or tells a story. Lighting and color held constant throughout. The final frame returns exactly to the starting image so the clip loops seamlessly. No text, no captions, no audio.",
+    "negative_prompt": "camera movement, zoom, pan, cuts, scene change, lighting change, new characters, text, subtitles, morphing faces, extra limbs"
+  }
+}

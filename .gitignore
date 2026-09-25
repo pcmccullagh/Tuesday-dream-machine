@@ -1,0 +1,21 @@
+# Generated media never goes in git (child likeness, licensed characters, size)
+content/
+media/out/
+media/inbox/
+*.mp4
+*.mov
+*.webm
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.wav
+*.flac
+*.opus
+*.mp3
+
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+.env

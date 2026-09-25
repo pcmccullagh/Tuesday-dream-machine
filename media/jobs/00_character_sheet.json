@@ -1,0 +1,12 @@
+{
+  "id": "character_sheet",
+  "stage": "MA",
+  "notes": "Text-only likeness by design (no photo of Tuesday is used anywhere). This sheet is the consistency anchor that every scene keyframe references. Peter approves it before MB.",
+  "image": {
+    "model": "nano-banana-2",
+    "aspect_ratio": "16:9",
+    "candidates": 4,
+    "reference_images": [],
+    "prompt": "Painterly illustration in a 70/30 style blend: primarily (70%) the atmospheric, painterly style of the animated series Scavengers Reign — muted naturalistic palette, organic textures, soft volumetric haze and lighting, subtle bioluminescent color accents — blended with (30%) the warm, soft style of Studio Ghibli background art. Gentle brushwork, soft diffused light, calm and cozy mood, no harsh shadows. No text, no logos, no watermark. Character turnaround reference sheet on a plain soft cream background: Tuesday, a 2-year-old toddler girl with a short blonde bob haircut with a soft fringe, a soft round toddler face, rosy cheeks, small button nose, and toddler proportions (large head relative to body, short limbs). Shown three times side by side — front view, three-quarter view, side profile — standing, calm neutral expression, wearing simple soft pale pajamas. Consistent face, hair and proportions across all three views. Even, soft lighting."
+  }
+}
