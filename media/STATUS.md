@@ -104,3 +104,28 @@ The last error is a policy/capability refusal, not a field-name error; it passed
 **Script fix committed:** `negativePrompt` is now omitted for Lite models; standard/fast still send it (untested). I added a comment noting that the docs' `inlineData` shape is rejected and `bytesBase64Encoded` is what the API accepts.
 
 **Video checks (ffmpeg):** not run, because no video was produced. No `ocean/take_*.mp4` exists, so there was nothing to rename to `smoketest_take.mp4`.
+
+## 2026-09-25 — Veo refusal isolation
+
+This section isolates the HTTP 400 "Your use case is currently not supported" error from the smoke test. Every call used job `media/jobs/01_ocean.json` with its unmodified prompt (which mentions Tuesday), `-n 1`, `veo-3.1-lite-generate-preview` and `--duration 4` unless noted. **EMPTY** is `diag_empty/keyframe_1.jpg` (sha256 `e75d151bf308…`), a person-free lighthouse/ocean dusk scene made with one Nano Banana Pro call from a temporary job in `/tmp`. Spend: 1 image, 3 Lite 4 s clips, 1 Fast 8 s clip, plus 1 refused request.
+
+| Test | Keyframe | lastFrame | Model / duration | Result | Output |
+|---|---|---|---|---|---|
+| T1 | EMPTY | yes (first = last) | Lite, 4 s | **HTTP 400**, verbatim: `Your use case is currently not supported.  Please refer to Gemini API documentation for current model offering.` | none |
+| T2 | EMPTY | no | Lite, 4 s | **Success** | `ocean/diag_T2.mp4` |
+| T3 | `character_sheet/v3/cand_1.jpg` | no | Lite, 4 s | **Success**, no `personGeneration` needed | `ocean/diag_T3.mp4` |
+| T4 | cand_1.jpg + `allow_adult` | yes | Lite, 4 s | Skipped: T3 already shows the child image is accepted | — |
+| T5 | cand_1.jpg + `allow_all` | yes | Lite, 4 s | Skipped, same reason | — |
+| T6 | EMPTY | yes (first = last) | **Fast**, 8 s (also sends `negativePrompt`) | **Success** | `ocean/diag_T6.mp4` |
+
+**ffmpeg checks** (all H.264 1280x720 at 24 fps, all with an AAC audio track):
+
+| Clip | Duration | Audio | SSIM first vs last frame |
+|---|---|---|---|
+| diag_T2 | 4.0 s | yes (mean −37.8 dB) | 0.876 |
+| diag_T3 | 4.0 s | yes (mean −53.0 dB) | 0.475 |
+| diag_T6 | 8.0 s | yes (mean −44.3 dB) | **0.977** |
+
+T3 notes: the three-figure character sheet cross-dissolves into a generated lighthouse scene by about 1.5 s. Tuesday is gone from the rest of the clip, which is why SSIM is low. That's expected when the input is a turnaround sheet rather than a scene keyframe, so it says nothing about how a real keyframe would behave. The renamed sidecars point to the `diag_*` names. `generation_log.jsonl` still lists them as `ocean/take_1.mp4`.
+
+**Conclusion.** The refusal comes from `lastFrame` on Veo 3.1 Lite. Tuesday and child content aren't the cause. Lite rejects any request that pins a last frame, even a person-free one (T1), and it accepts the same image without it (T2). It also accepted the illustrated child image with no `personGeneration` parameter (T3), so this API key can animate an image containing Tuesday. First = last frame works on `veo-3.1-fast-generate-preview`: T6 was accepted with `negativePrompt`, and its first and last frames match closely (SSIM 0.977), so loopable takes are viable on Fast (and presumably standard). The MC plan isn't blocked. Loop takes just can't use Lite. Next step: one Fast first=last take from a real `ocean/keyframe_*.jpg` (with Tuesday in the scene) to confirm she survives the loop and to check SSIM.
