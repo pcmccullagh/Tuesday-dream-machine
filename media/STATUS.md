@@ -48,3 +48,33 @@ Review notes (one line per image):
 - `character_sheet/v2/cand_4.png` — Reads as about 3, not a baby. Face and hair are consistent across all three views. Pale blue footed pajamas with warm glowing specks, rather than pale cream.
 
 Waiting on: **Peter picks a character sheet** (round 1 or round 2). No keyframes or videos have been started.
+
+
+## 2026-09-25 — Gemini API key: available models
+
+Read-only check. Nothing was generated. Called `GET /v1beta/models` with the Gemini API key (61 models, one page). These models have "veo" or "image" in their name:
+
+| Model | Display name | supportedGenerationMethods |
+|---|---|---|
+| `models/veo-3.1-generate-preview` | Veo 3.1 | predictLongRunning |
+| `models/veo-3.1-fast-generate-preview` | Veo 3.1 fast | predictLongRunning |
+| `models/veo-3.1-lite-generate-preview` | Veo 3.1 lite | predictLongRunning |
+| `models/gemini-2.5-flash-image` | Nano Banana | generateContent, countTokens, batchGenerateContent |
+| `models/gemini-3-pro-image-preview` | Nano Banana Pro | generateContent, countTokens, batchGenerateContent |
+| `models/gemini-3-pro-image` | Nano Banana Pro | generateContent, countTokens, batchGenerateContent |
+| `models/gemini-3.1-flash-image-preview` | Nano Banana 2 | generateContent, countTokens, batchGenerateContent |
+| `models/gemini-3.1-flash-image` | Nano Banana 2 | generateContent, countTokens, batchGenerateContent |
+| `models/gemini-3.1-flash-lite-image` | Nano Banana 2 Lite | generateContent, countTokens, batchGenerateContent |
+
+The Veo 3.0 models are not listed. The docs mark them as deprecated.
+
+Veo capabilities, from Google's docs (ai.google.dev/gemini-api/docs/video, which now points to /docs/veo; both checked 2026-09-25). The newest Veo model is `veo-3.1-lite-generate-preview` (updated March 2026). Standard and Fast were last updated January 2026.
+
+- **First + last frame (interpolation):** Yes. Pass `image` as the first frame and `lastFrame` as the last. `lastFrame` must be used together with `image`. All three Veo 3.1 models support this, Lite included.
+- **Durations:** `durationSeconds` can be "4", "6" or "8". It must be "8" at 1080p or 4k, and when using reference images or extension.
+- **Resolutions:** Lite supports 720p (default) and 1080p (8s only), with no 4k. Standard and Fast support 720p, 1080p (8s only) and 4k (8s only). Extension output is 720p only.
+- **Aspect ratios:** "16:9" (default) and "9:16", on all three models.
+- **Audio off:** Not supported. The docs say audio is "Always on" for every Veo 3.1 model. There is no audio toggle parameter in the Gemini API docs.
+- **Lite does not have:** reference images (up to 3) or video extension. Standard and Fast have both.
+
+Note: the video docs now suggest **Gemini Omni Flash** as the default video model and Veo 3.1 for last-frame control and scene extension. The key can also see `models/gemini-omni-flash-preview` and `models/gemini-omni-1.1-flash` (their names don't match the veo/image filter, so they aren't in the table above).
