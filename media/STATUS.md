@@ -250,3 +250,15 @@ Peter's feedback on the previous batch: the lighthouse light shaft "looks terrib
 4. Loop: `content/master_ocean.mp4` (23.2 s), wrap SSIM **0.993**. The earlier loop is kept as `content/*ocean_veo_v1*`.
 
 Campfire is unchanged (waiting on the Wan run on Peter's PC). Rain is unchanged (its takes still use Veo). The loops aren't approved or in the manifest yet.
+
+## 2026-09-27 — Stage MC: campfire via OpenRouter (Wan 2.7)
+
+Veo refuses the campfire keyframe (third-party characters). OpenRouter's video API (`/api/v1/videos`; video models only show up in `/api/v1/models?output_modalities=video`) offers several first+last-frame models. Used **`alibaba/wan-2.7`** (provider AtlasCloud) through the new `media/tools/openrouter_video.py`: job video prompt verbatim, negative prompt passed through, `frame_images` first = last = `campfire/keyframe.png` (inline JPEG data URL, accepted), 8 s, 720p, 16:9, no audio.
+
+- **No refusals.** 3 of 3 takes completed, $0.80 each ($2.40 total). Render time 76 s to 14 min.
+- Output: H.264 1284x716 at 30 fps, 240 frames each, conformed to 1280x720 at 24 fps by build_loop.
+- All three keep Tuesday (face, chestnut bob), Bluey (show style, sitting upright) and Frog and Toad (jackets) on-model. Motion is small idle movement (blinks, Bluey's eyes, Frog's head), fire and embers, and drifting fireflies. The camera holds (sub-pixel), with a gentle ≤2.5 px bob mid-take that returns.
+- Wan returns to the keyframe's composition (end vs start ECC 0.998) but redraws its fine linework, so a hard cut gave a texture pop (raw end vs start SSIM 0.958, against 0.993 between consecutive frames). New `build_loop.py --crossfade N` blends N frames at every join and at the wrap (explicit per-frame `blend`; seam floor 0.90 in this mode).
+- Loop: `content/master_campfire.mp4` + `campfire.mp4` + `campfire.jpg`, 523 frames = 21.8 s, `--crossfade 8`. Measured frame to frame: mean step SSIM 0.994, wrap step 0.971 (the rain loop's wrap step is 0.970). The next-worst steps sit on the encoder's 48-frame keyframe boundaries, so the wrap is at the level of an ordinary GOP boundary.
+
+All four scene loops now exist: ocean (Veo waves + rendered beam), rain (Veo), space (procedural), campfire (Wan 2.7). Still to do: Peter's 3+ minute watch of each loop (MD gate), confirming panel rotation in M1, and audio (ME).
