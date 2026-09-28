@@ -85,11 +85,18 @@ def main():
     ap.add_argument("--tail-search", type=int, default=12,
                     help="cut each take at the best-matching of its last N frames (1 = always the final frame)")
     ap.add_argument("--force", action="store_true", help="encode even if a seam fails")
+    ap.add_argument("--crossfade", type=int, default=0, metavar="N",
+                    help="crossfade N frames at every join and at the wrap instead of hard cuts. For models "
+                         "that land on the keyframe's composition but redraw its fine texture (Wan: seam "
+                         "SSIM ~0.96 vs ~0.99 frame to frame). Seams then only need SSIM >= 0.90.")
     ap.add_argument("--chain-only", type=Path, metavar="OUT",
                     help="write the chained takes (no vignette, CRF 10, plus a closing copy of frame 0) "
                          "for post-processing, then stop. Feed the result back in as a single take "
                          "with --tail-search 1.")
     args = ap.parse_args()
+    if args.crossfade and args.chain_only:
+        ap.error("--crossfade and --chain-only don't combine")
+    threshold = 0.90 if args.crossfade else args.seam_threshold
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
@@ -113,10 +120,10 @@ def main():
             s, cut = max((ssim(norm[i], f, norm[j], 0), f) for f in tail)
             cuts.append(cut)
             label = "wrap" if j == 0 else "join"
-            ok = s >= args.seam_threshold
+            ok = s >= threshold
             failed |= not ok
             print(f"{label} take{i} -> take{j}: SSIM {s:.4f} at frame {cut}/{counts[i] - 1} "
-                  f"{'ok' if ok else 'FAIL'}")
+                  f"{'ok' if ok else 'FAIL'}{' (crossfaded)' if args.crossfade else ''}")
         if failed and not args.force:
             sys.exit("seam check failed: regenerate the offending take, or pass --force")
 
@@ -137,14 +144,44 @@ def main():
                  str(args.chain_only)])
             print(f"chain: {args.chain_only}  {sum(cuts) + 1} frames ({sum(cuts)} + closing frame)")
             return
-        graph = ";".join(parts) + f";{chain}concat=n={len(norm)}:v=1:a=0"
-        if args.vignette != "none":
-            graph += f",vignette={args.vignette}"
-        graph += "[out]"
+        vig = f",vignette={args.vignette}" if args.vignette != "none" else ""
         master = args.out_dir / f"master_{args.scene}.mp4"
-        run(["ffmpeg", "-hide_banner", "-y", *inputs, "-filter_complex", graph,
-             "-map", "[out]", *ENCODE, str(master)])
-        total = sum(cuts)
+        if args.crossfade:
+            n = args.crossfade
+            if min(cuts) <= 3 * n:
+                sys.exit("--crossfade is too long for these takes")
+            # Pass 1: chain with an N-frame crossfade at each join.
+            prev, length = "v0", cuts[0]
+            for i in range(1, len(norm)):
+                # Split both sides: [prev body][blend(prev tail, next head)][next body].
+                parts.append(f"[{prev}]split[p{i}a][p{i}b];[v{i}]split[n{i}a][n{i}b];"
+                             f"[p{i}a]trim=end_frame={length - n},setpts=PTS-STARTPTS[pb{i}];"
+                             f"[p{i}b]trim=start_frame={length - n},setpts=PTS-STARTPTS[pt{i}];"
+                             f"[n{i}a]trim=end_frame={n},setpts=PTS-STARTPTS[nh{i}];"
+                             f"[n{i}b]trim=start_frame={n},setpts=PTS-STARTPTS[nb{i}];"
+                             f"[pt{i}][nh{i}]blend=all_expr='A*(1-(N+1)/{n + 1})+B*(N+1)/{n + 1}'[bl{i}];"
+                             f"[pb{i}][bl{i}][nb{i}]concat=n=3:v=1:a=0[x{i}]")
+                prev, length = f"x{i}", length + cuts[i] - n
+            xchain = tmp / "xchain.mp4"
+            run(["ffmpeg", "-hide_banner", "-y", *inputs, "-filter_complex", ";".join(parts), "-map", f"[{prev}]",
+                 "-c:v", "libx264", "-crf", "10", "-preset", "fast", "-pix_fmt", "yuv420p", str(xchain)])
+            length = frame_count(xchain)
+            # Pass 2: the wrap. Drop the first N frames and crossfade the tail into
+            # them, so the last frame flows straight into the new first frame.
+            graph = (f"[0:v]split=3[a][b][c];"
+                     f"[a]trim=start_frame={n}:end_frame={length - n},setpts=PTS-STARTPTS[mid];"
+                     f"[b]trim=start_frame={length - n}:end_frame={length},setpts=PTS-STARTPTS[tail];"
+                     f"[c]trim=end_frame={n},setpts=PTS-STARTPTS[head];"
+                     f"[tail][head]blend=all_expr='A*(1-(N+1)/{n + 1})+B*(N+1)/{n + 1}'[wrap];"
+                     f"[mid][wrap]concat=n=2:v=1:a=0{vig}[out]")
+            run(["ffmpeg", "-hide_banner", "-y", "-i", str(xchain), "-filter_complex", graph,
+                 "-map", "[out]", *ENCODE, str(master)])
+            total = frame_count(master)
+        else:
+            graph = ";".join(parts) + f";{chain}concat=n={len(norm)}:v=1:a=0{vig}[out]"
+            run(["ffmpeg", "-hide_banner", "-y", *inputs, "-filter_complex", graph,
+                 "-map", "[out]", *ENCODE, str(master)])
+            total = sum(cuts)
         print(f"master: {master}  {total} frames = {total / FPS:.1f}s")
 
     device = args.out_dir / f"{args.scene}.mp4"
