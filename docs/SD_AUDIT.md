@@ -232,42 +232,55 @@ that syncs to git.
 ## 6. Proposed v3 boot files
 
 ### config.txt
-**Replace** the stock top-of-file `[all]`-scope lines (`dtparam=audio=on`,
-`camera_auto_detect=1`, `display_auto_detect=1`, `auto_initramfs=1`,
-`dtoverlay=vc4-kms-v3d`, `max_framebuffers=2`, `disable_fw_kms_setup=1`,
-`arm_64bit=1`, `disable_overscan=1`, `arm_boost=1`) with the block below. Lines
-before the first `[filter]` section are `[all]` scope, so keeping them would load
-`vc4-kms-v3d` twice and contradict `audio=off` and the auto-detect settings. Keep
-the `[cm4]`/`[cm5]`/`[pi5]` sections as shipped, then end with this block under
-`[all]` (or put it at the very top of the file):
+This card only ever runs on a 3A+, so replace the whole file (back up the stock
+one first). Keeping the stock top-of-file lines would load `vc4-kms-v3d` twice
+and contradict `audio=off` and the auto-detect settings, and the
+`[cm4]`/`[cm5]`/`[pi5]` sections do nothing on a 3A+.
+
+**config.txt does not support inline comments.** Anything after the `=` is part
+of the value, so every comment must be on its own line starting with `#`.
 
 ```
+# Tuesday Dream Machine v3 - Raspberry Pi 3A+ only
 [all]
+
 # Base-tree parameters first, before any overlay loads.
-dtparam=i2c_arm=on            # I2C-1 on GPIO2/3 for the BH1750 (0x23)
-dtparam=audio=off             # no onboard sound card; the I2S DAC is the only ALSA card
+# I2C-1 on GPIO2/3 for the BH1750 (0x23)
+dtparam=i2c_arm=on
+# No onboard sound card; the I2S DAC is the only ALSA card
+dtparam=audio=off
 
 # --- display / GPU ---
-dtoverlay=vc4-kms-v3d,cma-128,nohdmi   # KMS/DRM for mpv; 128 MB CMA per spec; HDMI output off
-max_framebuffers=2            # required by vc4-kms-v3d
-disable_fw_kms_setup=1        # kernel owns modesetting; firmware must not inject video=
-dtoverlay=vc4-kms-dsi-waveshare-panel-v2,5_0_inch_a   # Waveshare 5" 720x1280 DSI + GT911 touch (verify A/B in M1)
-camera_auto_detect=0          # no camera: skip probing
-display_auto_detect=0         # panel is declared above: skip probing
-# gpu_mem left at the default: the Pi 3 v4l2m2m decoder runs on the firmware and needs it
+# KMS/DRM for mpv; 128 MB CMA per spec; HDMI output off
+dtoverlay=vc4-kms-v3d,cma-128,nohdmi
+# Required by vc4-kms-v3d
+max_framebuffers=2
+# Kernel owns modesetting; firmware must not inject video=
+disable_fw_kms_setup=1
+# Waveshare 5" 720x1280 DSI + GT911 touch (verify A/B model in M1)
+dtoverlay=vc4-kms-dsi-waveshare-panel-v2,5_0_inch_a
+# No camera, and the panel is declared above: skip probing
+camera_auto_detect=0
+display_auto_detect=0
+# gpu_mem left at the default: the Pi 3 v4l2m2m decoder runs on the firmware
 
 # --- audio ---
-dtoverlay=hifiberry-dac       # I2S (GPIO18/19/21) for the MAX98357A
+# I2S (GPIO18/19/21) for the MAX98357A
+dtoverlay=hifiberry-dac
 
 # --- radios ---
-dtoverlay=disable-bt          # Bluetooth off; frees the PL011 UART on GPIO14/15
+# Bluetooth off; frees the PL011 UART on GPIO14/15 for a serial console
+dtoverlay=disable-bt
 
 # --- boot speed / thermals ---
-boot_delay=0                  # firmware default is 1 s
-disable_splash=1              # no rainbow splash
-temp_soft_limit=70            # raise soft throttle from 60 C (heatsink + vented box)
-auto_initramfs=1              # needed for the overlayroot initramfs (M5)
-arm_64bit=1                   # 64-bit kernel8.img
+# Firmware default is 1 s
+boot_delay=0
+disable_splash=1
+# Raise the soft throttle point from 60 C (heatsink + vented box)
+temp_soft_limit=70
+# Needed for the overlayroot initramfs (M5)
+auto_initramfs=1
+arm_64bit=1
 ```
 
 `disable_overscan` is dropped: it has no effect under KMS.
