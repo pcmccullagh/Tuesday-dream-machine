@@ -404,3 +404,46 @@ What to do:
 6. To audit an ext4 root next time without writing: a read-only ext4 reader on
    the PC, or a Linux machine with `blockdev --setro` on the device and
    `mount -o ro,noload`.
+
+## 9. Bring-up results (2026-10-03/04, fresh Trixie Lite 64-bit)
+
+The card was re-flashed as recommended and configured over SSH.
+
+**Worked:**
+- Wi-Fi survives `cloud-init.disabled` and deleting `user-data`,
+  `network-config` and `meta-data`. NetworkManager keeps the profile in
+  `/etc/netplan/90-NM-*.yaml`. Disable cloud-init and reboot *before* deleting
+  the files, and confirm `cloud-init status` says `disabled`.
+- `/etc/NetworkManager/conf.d/sleepbox-wifi.conf` with `wifi.powersave=2` and
+  `connection.autoconnect-retries=0`: `iw dev wlan0 get power_save` reports off.
+  Restarting NetworkManager drops the SSH session for a few seconds.
+- The §6 `config.txt`, applied as a full-file replacement: boots and rejoins
+  Wi-Fi; `temp_soft_limit=70` is honoured on the 3A+; the only ALSA card is
+  `snd_rpi_hifiberry_dac`; no Bluetooth devices; DRM shows only `DSI-1`
+  (`connected`) and no HDMI connector.
+
+**Needed beyond §6:**
+- `dtparam=i2c_arm=on` enables the controller, but `/dev/i2c-1` only appears
+  with the `i2c-dev` module: `/etc/modules-load.d/i2c-dev.conf` containing
+  `i2c-dev` (raspi-config normally does this). `deploy/install.sh` must do it.
+- Pi OS ships `/usr/lib/systemd/journald.conf.d/40-rpi-volatile-storage.conf`
+  (`Storage=volatile`), so the volatile-journal item in §7 is already the
+  default. For debugging, `/etc/systemd/journald.conf.d/99-sleepbox-debug.conf`
+  with `Storage=persistent` overrides it (create the directory first); delete it
+  once bring-up is stable.
+
+**Did not work (unresolved):**
+- The §6 `cmdline.txt` line made the Pi drop off the network on three separate
+  boots, including after a power cycle; restoring the Imager line fixed it each
+  time. Cause unknown (no logs were captured; persistent journal was not yet
+  enabled). Suspects: removing `console=tty1`, removing `ds=nocloud;…`.
+  The Imager line stays for now. `ds=nocloud` is inert with cloud-init
+  disabled. Retest one token at a time with the persistent journal on.
+
+**Open issues:**
+- **Under-voltage:** `vcgencmd get_throttled` = `0x50000` and repeated
+  "Undervoltage detected" in `dmesg` while idle. Replace the supply with a
+  5 V 3 A micro-USB unit with an attached cable before M1 measurements; the
+  panel and amp will add load.
+- Windows does not resolve `sleepbox.local` reliably; reserve the Pi's address
+  in the router's DHCP settings and SSH by IP.
