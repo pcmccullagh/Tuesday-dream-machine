@@ -34,6 +34,64 @@ def read_frames(path):
     return np.frombuffer(p.stdout, np.uint8).reshape(-1, H, W, 3)
 
 
+class Beam:
+    """Two opposed soft beams rotating around the lamp, rendered from 3D splats.
+
+    All coordinates are output (video) pixels. `tower` is a float mask (0..1)
+    that hides a beam while it faces away; `sky` is the static plate whose
+    clouds give the haze its texture. apply(base, theta) screen-blends the
+    beams over a float BGR frame and returns uint8.
+    """
+
+    def __init__(self, w, h, lamp, tower, sky, scale, length=900, spread_deg=6.5, tilt=0.05,
+                 strength=0.55, flare=0.9, color="255,232,190"):
+        self.w, self.h, self.tower, self.tilt = w, h, tower, tilt
+        self.strength, self.flare = strength, flare
+        self.lx, self.ly = lamp
+        self.scale = scale
+        self.color = np.array([float(c) for c in color.split(",")][::-1], np.float32) / 255   # BGR
+        lum = cv2.cvtColor(np.clip(sky, 0, 255).astype(np.uint8), cv2.COLOR_BGR2GRAY).astype(np.float32)
+        tex = cv2.GaussianBlur(lum, (0, 0), 6)
+        self.tex = 0.75 + 0.5 * (tex - tex.min()) / (np.ptp(tex) + 1e-6)
+        yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+        r2 = (xx - self.lx) ** 2 + (yy - self.ly) ** 2
+        self.core = np.exp(-r2 / (2 * (5 * scale) ** 2))                       # the lamp itself
+        self.halo = np.exp(-r2 / (2 * (45 * scale) ** 2))                      # flare facing the viewer
+        length = length * scale
+        step = 3.0 * scale                                                     # 3D spacing between splats
+        self.svals = np.arange(0, length, step, dtype=np.float32)
+        self.radii = 4 * scale + self.svals * np.tan(np.radians(spread_deg))
+        amps = (np.exp(-self.svals / (0.6 * length)) * np.clip(1 - self.svals / length, 0, 1) ** 1.5
+                / np.sqrt(self.radii / self.radii[0]))
+        self.amps = amps * step / (self.radii[0] * 2.5)
+
+    def density(self, phi):
+        # Built at half resolution: no hard edges at any angle, and
+        # foreshortening piles light up naturally.
+        hw, hh = self.w // 2, self.h // 2
+        ax, az = np.cos(phi), np.sin(phi)                                      # across screen, toward viewer
+        acc = np.zeros((hh, hw), np.float32)
+        for sv, r, amp in zip(self.svals, self.radii, self.amps):
+            cx, cy = (self.lx + sv * ax) / 2, (self.ly - sv * self.tilt) / 2
+            rh = r / 2
+            x0, x1 = int(max(cx - 5 * rh, 0)), int(min(cx + 5 * rh + 1, hw))
+            y0, y1 = int(max(cy - 5 * rh, 0)), int(min(cy + 5 * rh + 1, hh))
+            if x0 >= x1 or y0 >= y1:
+                continue
+            gx = np.exp(-0.5 * ((np.arange(x0, x1, dtype=np.float32) - cx) / rh) ** 2)
+            gy = np.exp(-0.5 * ((np.arange(y0, y1, dtype=np.float32) - cy) / rh) ** 2)
+            acc[y0:y1, x0:x1] += amp * np.outer(gy, gx)
+        d = cv2.resize(acc, (self.w, self.h), interpolation=cv2.INTER_LINEAR)
+        if az < 0:                                                             # facing away: behind the tower
+            d *= (1 - self.tower) * (0.6 + 0.4 * (1 + az))
+        return d + max(az, 0.0) ** 4 * self.flare * self.halo
+
+    def apply(self, base, theta):
+        d = self.density(theta) + self.density(theta + np.pi)
+        alpha = (0.85 * (1 - np.exp(-(self.strength * d * self.tex + 0.35 * self.core) / 0.85)))[..., None]
+        return np.clip(255 - (255 - base) * (1 - alpha * self.color), 0, 255).astype(np.uint8)   # screen blend
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("chain", type=Path)
@@ -81,51 +139,12 @@ def main():
     tower = cv2.GaussianBlur(wa(tower).astype(np.float32) / 255, (0, 0), 1)
 
     lx, ly = to_video(*(float(v) for v in args.lamp.split(",")))
-    scale = W / kw
-    length, spread = args.length * scale, np.tan(np.radians(args.spread_deg))
-    color = np.array([float(c) for c in args.color.split(",")][::-1], np.float32) / 255   # BGR
-
-    # Beam lights the haze unevenly: static texture from the sky's own clouds.
-    lum = cv2.cvtColor(plate.astype(np.uint8), cv2.COLOR_BGR2GRAY).astype(np.float32)
-    tex = cv2.GaussianBlur(lum, (0, 0), 6)
-    tex = 0.75 + 0.5 * (tex - tex.min()) / (np.ptp(tex) + 1e-6)
-
-    yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
-    core = np.exp(-((xx - lx) ** 2 + (yy - ly) ** 2) / (2 * (5 * scale) ** 2))   # the lamp itself
-
-    # The beam is built from soft splats along a 3D cone, at half resolution:
-    # no hard edges at any angle, and foreshortening piles light up naturally.
-    hw, hh = W // 2, H // 2
-    step = 3.0 * scale                                                  # 3D spacing between splats
-    svals = np.arange(0, length, step, dtype=np.float32)
-    radii = 4 * scale + svals * spread
-    amps = np.exp(-svals / (0.6 * length)) * np.clip(1 - svals / length, 0, 1) ** 1.5 / np.sqrt(radii / radii[0])
-    amps *= step / (radii[0] * 2.5)
-
-    def beam(phi):
-        ax, az = np.cos(phi), np.sin(phi)                               # across screen, toward viewer
-        acc = np.zeros((hh, hw), np.float32)
-        for sv, r, amp in zip(svals, radii, amps):
-            cx, cy = (lx + sv * ax) / 2, (ly - sv * args.tilt) / 2
-            rh = r / 2
-            x0, x1 = int(max(cx - 5 * rh, 0)), int(min(cx + 5 * rh + 1, hw))
-            y0, y1 = int(max(cy - 5 * rh, 0)), int(min(cy + 5 * rh + 1, hh))
-            if x0 >= x1 or y0 >= y1:
-                continue
-            gx = np.exp(-0.5 * ((np.arange(x0, x1, dtype=np.float32) - cx) / rh) ** 2)
-            gy = np.exp(-0.5 * ((np.arange(y0, y1, dtype=np.float32) - cy) / rh) ** 2)
-            acc[y0:y1, x0:x1] += amp * np.outer(gy, gx)
-        d = cv2.resize(acc, (W, H), interpolation=cv2.INTER_LINEAR)
-        if az < 0:                                                      # facing away: behind the tower
-            d *= (1 - tower) * (0.6 + 0.4 * (1 + az))
-        facing = max(az, 0.0) ** 4
-        return d + facing * args.flare * np.exp(-((xx - lx) ** 2 + (yy - ly) ** 2) / (2 * (45 * scale) ** 2))
+    beam = Beam(W, H, (lx, ly), tower, plate, scale=W / kw, length=args.length, spread_deg=args.spread_deg,
+                tilt=args.tilt, strength=args.strength, flare=args.flare, color=args.color)
 
     def render(fr, theta):
-        d = beam(theta) + beam(theta + np.pi)
-        alpha = (0.85 * (1 - np.exp(-(args.strength * d * tex + 0.35 * core) / 0.85)))[..., None]   # soft roll-off
         base = fr.astype(np.float32) * (1 - mask) + plate * mask
-        return np.clip(255 - (255 - base) * (1 - alpha * color), 0, 255).astype(np.uint8)   # screen blend
+        return beam.apply(base, theta)
 
     if args.preview:
         tiles = [cv2.resize(render(frames[0], j * np.pi / 8), (W // 2, H // 2)) for j in range(8)]

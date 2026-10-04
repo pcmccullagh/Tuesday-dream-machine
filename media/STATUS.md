@@ -262,3 +262,22 @@ Veo refuses the campfire keyframe (third-party characters). OpenRouter's video A
 - Loop: `content/master_campfire.mp4` + `campfire.mp4` + `campfire.jpg`, 523 frames = 21.8 s, `--crossfade 8`. Measured frame to frame: mean step SSIM 0.994, wrap step 0.971 (the rain loop's wrap step is 0.970). The next-worst steps sit on the encoder's 48-frame keyframe boundaries, so the wrap is at the level of an ordinary GOP boundary.
 
 All four scene loops now exist: ocean (Veo waves + rendered beam), rain (Veo), space (procedural), campfire (Wan 2.7). Still to do: Peter's 3+ minute watch of each loop (MD gate), confirming panel rotation in M1, and audio (ME).
+
+## 2026-10-04 — Ocean v3: constant waves, constant beam, wind, splash
+
+Peter's feedback on v2: the waves stop. They should be constant throughout, the lighthouse should rotate at a perfectly constant speed, Tuesday's hair can blow in random wind, and ideally a small splash hits the mermaid's rock.
+
+**Why the waves stopped:** measured sea motion per Veo take: take_1 averages 1.0–1.4 (moving), but takes 2 and 3 average 0.01–0.05. Veo pinned to first = last frame settles the water to hold the keyframe, so the loop's water froze after ~7.5 s.
+
+**Fix: the ocean is now composited from layers** (`media/tools/ocean_compose.py`, keyframe pixels, output 1280x720 at 24 fps):
+1. Static plate: `ocean/keyframe_nobeam.png`.
+2. Sea: `ocean/water_1.mp4`, one **free-running** (first frame only, no last-frame pin) 30 s clip from `alibaba/wan-3.0` via OpenRouter (`water_pass` in `01_ocean.json`, $2.55). Sea motion stays 1.7–2.9 for all 30 s. Only the water inside `ocean/sea_mask.png` is used (made from a motion map, excluding the grass and Tuesday's silhouette). It's aligned per second to the plate (ECC, drift ≤5 px) and looped with a 2 s crossfade. Caveat: as waves wash in, the foam in the bottom-left corner sometimes forms a net-like cell pattern.
+3. Hair: a wind warp limited to the back of the bob (`ocean/hair_mask.png`, ramped so her face and ear stay fixed), up to 13 px. Gusts are a sum of sines with whole-number cycles per loop, so the motion is irregular but loops exactly.
+4. Mermaid cut-out (static), plus 5 small spray bursts with mist at her rock (t = 1.4, 6.3, 11.1, 15.7, 20.2 s, alternating sides).
+5. Beam: `lighthouse_beam.Beam` (refactored into a reusable class), 2 turns per 24 s at a constant angular speed.
+
+Loop: `content/master_ocean.mp4` (24.0 s). Sea motion per second is 1.5–2.5 throughout (v2 dropped to 0.02). The wrap step is the same as any other step (2.49 vs median 2.05). Wrap SSIM 0.995. v2 is kept as `content/*ocean_v2*`.
+
+**Environment note:** this session's `python3` is system 3.12 with no numpy. The media tools need `~/.hermes/hermes-agent/venv/bin/python3` (numpy 2.4.3, OpenCV 5.0), which was on PATH in earlier sessions.
+
+**Review page:** `~/TuesdayDreamMachine-media/preview/review/` (served at `:8765/review/`) shows every video for all four scenes, with approve / needs-work votes and notes saved in the browser, plus a "copy my notes" export.

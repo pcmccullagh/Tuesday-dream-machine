@@ -26,5 +26,15 @@
     "negative_prompt": "camera movement, zoom, pan, cuts, scene change, lighting change, new characters, text, subtitles, morphing faces, extra limbs",
     "audio_note": "Veo 3.1 always generates audio; build_loop.py discards it"
   },
-  "licensing": "Ariel (Disney) is a copyrighted character, included as a small easter egg. Private, non-commercial use on a device in Tuesday's room only. Rendered files must never be committed, published or shared."
+  "licensing": "Ariel (Disney) is a copyrighted character, included as a small easter egg. Private, non-commercial use on a device in Tuesday's room only. Rendered files must never be committed, published or shared.",
+  "water_pass": {
+    "model": "alibaba/wan-3.0 (OpenRouter)",
+    "mode": "image_to_video, first frame only (free-running, no last-frame pin)",
+    "first_frame": "ocean/keyframe_nobeam.png",
+    "duration_s": 30,
+    "aspect_ratio": "16:9",
+    "resolution": "720p",
+    "use": "Only the open-water region is used, as the moving sea layer under a static sky/land/Tuesday plate (see media/tools/ocean_compose.py). Looped with a 2 s crossfade.",
+    "prompt": "The ocean waves roll in continuously and rhythmically from the horizon toward the rocky shore at a constant, steady pace for the entire clip; each wave swells, breaks into soft white foam, and washes back, followed immediately by the next. The sea never calms, slows or stops. Locked-off static camera: no camera movement, no zoom, no pan. Everything except the water stays completely still: the sky, clouds, lighthouse, cliffs, grass and the girl do not move. Lighting and color held constant throughout. Painterly style unchanged. No text, no captions, no audio."
+  }
 }

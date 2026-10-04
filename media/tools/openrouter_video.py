@@ -98,11 +98,14 @@ def main():
     ap.add_argument("--no-negative", action="store_true", help="don't send the job's negative prompt")
     ap.add_argument("--duration", type=int, help="seconds (default: job's duration_s)")
     ap.add_argument("--resolution", help="default: job's resolution")
+    ap.add_argument("--spec", default="video", help="job section holding the prompt (e.g. water_pass)")
+    ap.add_argument("--first-frame-only", action="store_true", help="don't pin the last frame (free-running clip)")
+    ap.add_argument("--stem", default="take", help="output name stem: <scene>/<stem>_<n>.mp4")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
     job = json.loads(args.job.read_text())
-    spec = job["video"]
+    spec = job[args.spec]
     frame = data_url(args.keyframe)
     body = {
         "model": args.model,
@@ -116,6 +119,8 @@ def main():
             {"type": "image_url", "image_url": {"url": frame}, "frame_type": "last_frame"},
         ],
     }
+    if args.first_frame_only:
+        body["frame_images"] = body["frame_images"][:1]
     if spec.get("negative_prompt") and not args.no_negative:
         body["provider"] = {"options": {args.provider_slug: {"parameters": {"negative_prompt": spec["negative_prompt"]}}}}
     if args.dry_run:
@@ -137,10 +142,10 @@ def main():
         if job_resp["status"] != "completed":
             print(f"take {i + 1}: {job_resp['status']}:\n{json.dumps(redact(job_resp))[:3000]}"); continue
         url = (job_resp.get("unsigned_urls") or [None])[0] or f"{API}/videos/{job_resp['id']}/content?index=0"
-        out = next_path(MEDIA_ROOT / job["id"], "take", ".mp4")
+        out = next_path(MEDIA_ROOT / job["id"], args.stem, ".mp4")
         out.write_bytes(request("GET", url, key, raw=True))
         meta = {"job": job["id"], "stage": "video", "service": "openrouter", "model": args.model,
-                "prompt": spec["prompt"], "keyframe": str(args.keyframe), "first_equals_last": True,
+                "prompt": spec["prompt"], "keyframe": str(args.keyframe), "first_equals_last": not args.first_frame_only, "spec": args.spec,
                 "request": redact(body), "openrouter_job": job_resp.get("id"), "usage": job_resp.get("usage"),
                 "file": str(out.relative_to(MEDIA_ROOT)), "sha256": hashlib.sha256(out.read_bytes()).hexdigest(),
                 "created": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")}
