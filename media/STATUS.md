@@ -281,3 +281,15 @@ Loop: `content/master_ocean.mp4` (24.0 s). Sea motion per second is 1.5–2.5 th
 **Environment note:** this session's `python3` is system 3.12 with no numpy. The media tools need `~/.hermes/hermes-agent/venv/bin/python3` (numpy 2.4.3, OpenCV 5.0), which was on PATH in earlier sessions.
 
 **Review page:** `~/TuesdayDreamMachine-media/preview/review/` (served at `:8765/review/`) shows every video for all four scenes, with approve / needs-work votes and notes saved in the browser, plus a "copy my notes" export.
+
+## 2026-10-04 — Space v3 (shooting stars, stronger twinkle) and Campfire v2 (rising embers)
+
+Peter: ocean and rain look good. Space is too subtle (add shooting stars and more twinkle). Campfire sparks move up and down instead of rising into the sky.
+
+**Space analysis:** median small-star brightness swing 28/255 (big sparkles 69), with twinkle periods of 3–24 s (mean ~12 s), so the change was too slow and too small to read.
+**Space v3** (`animate_still.py` new options: `--twinkle-max-s`, `--overbright`, `--glint-frac`, `--bloom`, `--shooting`). `space/anim_2.mp4` → `content/master_space.mp4`, **60 s** loop (so shooting stars don't repeat every 24 s), 6.2 MB device file. Settings: depth 0.95, periods 1.5–6 s, overbright 0.45, 20% of stars glint, bloom 0.6. Six shooting stars (t = 4, 14.5, 23, 34.5, 44, 53.5 s), 0.8–0.9 s each, in the upper sky clear of the moon and Tuesday (paths checked on a still). Measured: small-star swing 76 (2.7x), rate of change 6.6x. Pixels that ever change: 3.9% (stars, streak paths, breathing only). Wrap SSIM 0.997. v2 kept as `content/*space_v2*`. Frequency (one shooting star per ~10 s) is the default from the proposal; Peter didn't specify.
+
+**Campfire analysis:** tracked sparks and made a time-slice image of the column above the fire. Take 1's sparks rise; take 2's blink in place; take 3's whole spark field rises and sinks in unison (the image itself doesn't move: global shift ≤0.25 px). The cause is the first = last frame pin: a spark that leaves has to come back.
+**Campfire v2** (`media/tools/campfire_embers.py`; `build_loop.py --crossfade` now combines with `--chain-only`, giving an open loop). `campfire/chain_xf.mp4` (same 3 Wan takes, 8-frame crossfades, 523 frames) → Wan sparks removed in the zone above the fire. Rule: small bright specks except blue (stars) or green (fireflies), and never anything touching a large flame body. Then procedural embers: about 3 per second plus 3 small pops, ~12 in the air at once. They rise 120–210 px/s with slight slowing, drift and curl sideways, flicker, cool yellow → orange → deep red over 2.2–4.2 s, and fade, with a short motion streak. They pass behind Tuesday and Frog. Each is timed modulo the loop. The time slice shows only rising streaks; flames intact. `content/master_campfire.mp4` (21.8 s), wrap SSIM 0.990. v1 kept as `content/*campfire_v1*`.
+
+Review page updated (`preview/review/`): new versions are marked current, old ones replaced.

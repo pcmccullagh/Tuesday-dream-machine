@@ -12,6 +12,15 @@ Stars: small bright points found with a white top-hat (outside --exclude
 boxes). Each star's own light, not the sky behind it, is scaled by a slow
 smooth pulse with a random phase and period (an integer fraction of the loop).
 
+Twinkle: depth (how far a star dims), --overbright (how far above its painted
+brightness it peaks), a period range, and an occasional quick glint on a
+random subset. Peaks also add a soft bloom, which makes the big four-point
+sparkles swell.
+
+Shooting stars (--shooting): a bright head with a tapering, blurred tail along
+a straight path, faded in and out, drawn additively. Given as
+t0,x,y,angle_deg,travel_px,dur_s (keyframe pixels; angle 0 = right, 90 = down).
+
 Breathing: a smooth Gaussian bump (cx, cy, sigma, amplitude px, direction
 nx, ny) shifts pixels along the direction and back, once per
 --breath-period seconds. Keep the bump on the torso, away from the face.
@@ -62,6 +71,42 @@ def find_stars(img, exclude, scales):
     return labels, light, total
 
 
+def draw_shooting(frame, t, t0, x, y, angle, travel, dur, tail=170.0):
+    """Additively draw one shooting star at time t (no-op outside its window)."""
+    a = (t - t0) / dur
+    if not 0 <= a <= 1:
+        return frame
+    d = np.array([np.cos(np.radians(angle)), np.sin(np.radians(angle))])
+    head = np.array([x, y]) + d * travel * (1 - (1 - a) ** 1.6)       # quick start, easing out
+    env = np.sin(np.pi * a) ** 0.6
+    tl = tail * min(1.0, a * 2.5)                                      # tail grows as it streaks
+    pad = int(tail + 30)
+    x0, y0 = int(head[0]) - pad, int(head[1]) - pad
+    h, w = frame.shape[:2]
+    cx0, cy0, cx1, cy1 = max(x0, 0), max(y0, 0), min(x0 + 2 * pad, w), min(y0 + 2 * pad, h)
+    if cx0 >= cx1 or cy0 >= cy1:
+        return frame
+    canvas = np.zeros((2 * pad, 2 * pad), np.float32)
+    hl = head - [x0, y0]
+    steps = 40
+    for k in range(steps):
+        p0 = hl - d * tl * k / steps
+        p1 = hl - d * tl * (k + 1) / steps
+        v = (1 - k / steps) ** 2.2
+        cv2.line(canvas, (int(p0[0] * 4), int(p0[1] * 4)), (int(p1[0] * 4), int(p1[1] * 4)), float(v),
+                 max(1, int(round(2.4 * (1 - k / steps) + 0.6))), cv2.LINE_AA, shift=2)
+    core = cv2.GaussianBlur(canvas, (0, 0), 0.9)
+    glow = cv2.GaussianBlur(canvas, (0, 0), 4.0) * 1.6
+    head_glow = np.zeros_like(canvas)
+    cv2.circle(head_glow, (int(hl[0]), int(hl[1])), 3, 1.0, -1, cv2.LINE_AA)
+    head_glow = cv2.GaussianBlur(head_glow, (0, 0), 3.0) * 2.5
+    lum = (core * 230 + glow * 90 + head_glow * 180) * env
+    col = np.array([255, 246, 236], np.float32) / 255                  # BGR: faintly cool white
+    sub = (slice(cy0 - y0, cy1 - y0), slice(cx0 - x0, cx1 - x0))
+    frame[cy0:cy1, cx0:cx1] += lum[sub][..., None] * col
+    return frame
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("keyframe", type=Path)
@@ -74,6 +119,12 @@ def main():
                     help="top-hat size:max area:threshold, small stars first then big sparkles")
     ap.add_argument("--twinkle-depth", type=float, default=0.7, help="0..1, how far stars dim at the trough")
     ap.add_argument("--twinkle-min-s", type=float, default=3.0, help="shortest twinkle period, seconds")
+    ap.add_argument("--twinkle-max-s", type=float, default=0, help="longest twinkle period (0 = loop length)")
+    ap.add_argument("--overbright", type=float, default=0.0, help="extra brightness at the peak, e.g. 0.45")
+    ap.add_argument("--glint-frac", type=float, default=0.0, help="fraction of stars with an occasional quick glint")
+    ap.add_argument("--bloom", type=float, default=0.0, help="soft glow added around stars at their peak")
+    ap.add_argument("--shooting", action="append", default=[],
+                    help="t0,x,y,angle_deg,travel_px,dur_s (repeatable)")
     ap.add_argument("--breath", help="cx,cy,sigma,amp_px,nx,ny (keyframe pixels)")
     ap.add_argument("--breath-period", type=float, default=4.0, help="seconds; must divide the loop length")
     ap.add_argument("--seed", type=int, default=1)
@@ -93,10 +144,19 @@ def main():
     labels, light, nstars = find_stars(img, exclude, scales)
     nl = labels.max() + 1
     max_cycles = max(1, int(L / args.twinkle_min_s))
-    cycles = rng.integers(1, max_cycles + 1, nl)       # whole cycles per loop -> seamless
+    min_cycles = max(1, int(round(L / args.twinkle_max_s))) if args.twinkle_max_s else 1
+    cycles = rng.integers(min_cycles, max_cycles + 1, nl)   # whole cycles per loop -> seamless
     phase = rng.uniform(0, 2 * np.pi, nl)
     depth = rng.uniform(0.4, 1.0, nl) * args.twinkle_depth
-    print(f"stars: {nstars}  twinkle periods {L / max_cycles:.1f}-{L:.0f}s")
+    glint = rng.random(nl) < args.glint_frac
+    glint_cycles = rng.integers(max(1, L // 12), max(2, L // 5) + 1, nl)
+    glint_phase = rng.uniform(0, 2 * np.pi, nl)
+    print(f"stars: {nstars}  twinkle periods {L / max_cycles:.1f}-{L / min_cycles:.0f}s  "
+          f"glinting {int(glint[1:].sum())}")
+    if args.bloom:
+        glow_lab = cv2.dilate(labels.astype(np.float32), np.ones((11, 11), np.uint8)).astype(np.int32)
+        glow = cv2.GaussianBlur(light, (0, 0), 3.5) * 2.2
+    shooting = [tuple(float(v) for v in sh.split(",")) for sh in args.shooting]
 
     if args.breath:
         cx, cy, sig, amp, nx, ny = (float(v) for v in args.breath.split(","))
@@ -115,9 +175,16 @@ def main():
         t = f / fps
         # Smooth pulse in [0, 1]: 1 = full brightness, 0 = deepest dim.
         pulse = 0.5 * (1 + np.cos(2 * np.pi * cycles * t / L + phase))
-        factor = (1 - depth * (1 - pulse)).astype(np.float32)
+        factor = 1 - depth * (1 - pulse) + args.overbright * pulse ** 4
+        if args.glint_frac:
+            factor += glint * 1.2 * np.maximum(0, np.cos(2 * np.pi * glint_cycles * t / L + glint_phase)) ** 40
+        factor = factor.astype(np.float32)
         factor[0] = 1.0
         frame = base + (factor[labels] - 1.0)[..., None] * light
+        if args.bloom:
+            frame += (np.maximum(factor - 1.0, 0)[glow_lab] * args.bloom)[..., None] * glow
+        for sh in shooting:
+            frame = draw_shooting(frame, t, *sh)
         if args.breath:
             s = 0.5 * (1 - np.cos(2 * np.pi * t / args.breath_period))   # 0 at loop start
             frame = cv2.remap(frame, (xx - bx * s).astype(np.float32), (yy - by * s).astype(np.float32),

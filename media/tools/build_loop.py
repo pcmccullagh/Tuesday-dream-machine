@@ -90,12 +90,10 @@ def main():
                          "that land on the keyframe's composition but redraw its fine texture (Wan: seam "
                          "SSIM ~0.96 vs ~0.99 frame to frame). Seams then only need SSIM >= 0.90.")
     ap.add_argument("--chain-only", type=Path, metavar="OUT",
-                    help="write the chained takes (no vignette, CRF 10, plus a closing copy of frame 0) "
-                         "for post-processing, then stop. Feed the result back in as a single take "
-                         "with --tail-search 1.")
+                    help="write the chained takes (no vignette, CRF 10) for post-processing, then stop. "
+                         "Hard cuts: adds a closing copy of frame 0. With --crossfade: an open loop "
+                         "(no closing copy). Feed the processed closed loop back in with --tail-search 1.")
     args = ap.parse_args()
-    if args.crossfade and args.chain_only:
-        ap.error("--crossfade and --chain-only don't combine")
     threshold = 0.90 if args.crossfade else args.seam_threshold
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -133,7 +131,7 @@ def main():
             inputs += ["-i", str(path)]
             parts.append(f"[{i}:v]trim=end_frame={cut},setpts=PTS-STARTPTS[v{i}]")
         chain = "".join(f"[v{i}]" for i in range(len(norm)))
-        if args.chain_only:
+        if args.chain_only and not args.crossfade:
             # Closing frame = take 0's first frame, so the chain is a closed loop
             # that a second build_loop pass (--tail-search 1) cuts exactly.
             inputs += ["-i", str(norm[0])]
@@ -173,7 +171,13 @@ def main():
                      f"[b]trim=start_frame={length - n}:end_frame={length},setpts=PTS-STARTPTS[tail];"
                      f"[c]trim=end_frame={n},setpts=PTS-STARTPTS[head];"
                      f"[tail][head]blend=all_expr='A*(1-(N+1)/{n + 1})+B*(N+1)/{n + 1}'[wrap];"
-                     f"[mid][wrap]concat=n=2:v=1:a=0{vig}[out]")
+                     f"[mid][wrap]concat=n=2:v=1:a=0{'' if args.chain_only else vig}[out]")
+            if args.chain_only:
+                # Open loop for post-processing (last frame flows into frame 0; no closing copy).
+                run(["ffmpeg", "-hide_banner", "-y", "-i", str(xchain), "-filter_complex", graph, "-map", "[out]",
+                     "-c:v", "libx264", "-crf", "10", "-preset", "fast", "-pix_fmt", "yuv420p", str(args.chain_only)])
+                print(f"chain: {args.chain_only}  {frame_count(args.chain_only)} frames (open loop, crossfaded)")
+                return
             run(["ffmpeg", "-hide_banner", "-y", "-i", str(xchain), "-filter_complex", graph,
                  "-map", "[out]", *ENCODE, str(master)])
             total = frame_count(master)
